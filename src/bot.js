@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMY_ELEMENTS } from './constants';
+import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS } from './constants';
 import {
     isGameOver, getHeadPosition, getElementByXY, getBoardSize, getAt, getBoardAsArray, getArrayBoardAsArray, getElementByXYArr
 } from './utils';
@@ -42,24 +42,33 @@ export function getNextSnakeMove(board, logger) {
 
     logger('Head:' + JSON.stringify(headPosition));
 
-    //const raitingsBoard = getWheigts(board, headPosition, logger);
+    const raitingsBoard = getWheigts(board, headPosition, logger);
     //logger('Food: ' + JSON.stringify(raitingsBoard));
 
-   //console.log(JSON.stringify(getArrayBoardAsArray(raitingsBoard), undefined, '\t'));
+    //console.log(JSON.stringify(getArrayBoardAsArray(raitingsBoard), undefined, '\t'));
 
-    //const sorround = getSorround(raitingsBoard, headPosition); // (LEFT, UP, RIGHT, DOWN)
-    //logger('Sorround: ' + JSON.stringify(sorround, undefined, '  '));
+    const sorround = getSorround(raitingsBoard, headPosition); // (LEFT, UP, RIGHT, DOWN)
+    logger('Sorround: ' + JSON.stringify(sorround, undefined, '  '));
 
-    //const command = getCommandByRaitings(sorround);
+    const command = getCommandByRaitings(sorround);
     console.timeEnd('st');
-    return 'ACT,DOWN';
+    return command;
 }
 
-function distance(x1, y1, x2, y2) {
-    var a = x1 - x2;
-    var b = y1 - y2;
+function renderPath(filteredBoard, path) {
+    if (true) {
+        return;
+    }
+    filteredBoard = filteredBoard.split('');
+    var size = getBoardSize(filteredBoard);
+    if (path && path.length) {
+        path.forEach(([x, y]) => {
+            filteredBoard[size * y + x] = 'H';
+        })
+    }
+    filteredBoard = filteredBoard.join('');
 
-    return Math.sqrt(a * a + b * b);
+    console.log(getBoardAsArray(filteredBoard).join('\n'))
 }
 
 function getWheigts(board, headPosition, logger) {
@@ -68,30 +77,52 @@ function getWheigts(board, headPosition, logger) {
     wheigtBoard.length = boardSize * boardSize;
     wheigtBoard.forEach((el, idx, arr) => arr[idx] === 0);
 
+    var mode = 'normal';
+    if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
+        mode = 'fly';
+    } else if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_EVIL) {
+        mode = 'evil';
+    }
 
     for (let x = 0; x < boardSize; x++) {
         for (let y = 0; y < boardSize; y++) {
             var something = getAt(board, x, y);
 
-            var rating = rateElement(something);
+            var rating = rateElement(something, mode);
             wheigtBoard[boardSize * y + x] = rating;
 
             if (rating > 0) {
-                const boardClone = getBoardAsArray(board);
+                const filteredBoard = board.split('').map(x => {
+                    if (mode === 'normal' && isEnemy(x)) {
+                        return '#';
+                    } else if (x === ELEMENT.WALL || x === ELEMENT.START_FLOOR) {
+                        return '#';
+                    } else if (x === ELEMENT.STONE && mode === 'normal') {
+                        return '#';
+                    } else if (isSelf(x)) {
+                        return '#';
+                    } else {
+                        return '.';
+                    }
+                }).join('');
+
+                const boardClone = getBoardAsArray(filteredBoard);
                 const path = pathFinder.getPath(boardClone, [
                     headPosition.x,
                     headPosition.y
-                ], [x, y],
-                    { noPath: ELEMENT.WALL }
+                ], [x, y]
                 );
+                renderPath(filteredBoard, path)
 
                 if (path && path.length > 1) {
-                   // logger(`path length: ${path.length}`);
+                    // logger(`path length: ${path.length}`);
                     path.shift();
                     var [nextX, nextY] = path.shift();
-                   // logger(`x: ${nextX}, y: ${nextY}`);
+                    // logger(`x: ${nextX}, y: ${nextY}`);
 
-                    wheigtBoard[boardSize * nextY + nextX] += rating/path.length;
+                    if (wheigtBoard[boardSize * nextY + nextX] >= 0) {
+                        wheigtBoard[boardSize * nextY + nextX] += rating / (path.length * path.length);
+                    }
                 }
             }
         };
@@ -117,28 +148,35 @@ function isEnemy(element) {
     return ENEMY_ELEMENTS.indexOf(element) > -1;
 }
 
-function rateElement(element) {
+function isSelf(element) {
+    return SELF_ELEMENTS.indexOf(element) > -1;
+}
+
+function rateElement(element, mode) {
+    var isFly = mode === 'fly';
+    var isFury = mode === 'evil';
+
     if (element === ELEMENT.NONE) {
         return 0;
-    }
-    if (
-        element === ELEMENT.APPLE ||
-        element === ELEMENT.GOLD
-    ) {
-        return 10;
+    } else if (element === ELEMENT.APPLE) {
+        return 15;
+    } else if (element === ELEMENT.GOLD) {
+        return 25;
     } else if (element === ELEMENT.FURY_PILL ||
         element === ELEMENT.FLYING_PILL) {
         return 5;
-    } else if (isEnemy(element)) {
-        return -2
+    } else if (!isFury && !isFly && isEnemy(element)) {
+        return -12
+    } else if (isFly && element === ELEMENT.STONE) {
+        return 0;
     }
 
-    return -1;
+    return -10;
 }
 
 /** */
 function getCommandByRaitings(raitings) {
-    var indexToCommand = [COMMANDS.LEFT, COMMANDS.UP, COMMANDS.UP, COMMANDS.DOWN];
+    var indexToCommand = [COMMANDS.LEFT, COMMANDS.UP, COMMANDS.RIGHT, COMMANDS.DOWN];
     var maxIndex = 0;
     var max = -Infinity;
     for (var i = 0; i < raitings.length; i++) {
