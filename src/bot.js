@@ -23,7 +23,7 @@ import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS } from './constants';
 import {
     isGameOver, getHeadPosition, getElementByXY, getBoardSize, getAt, getBoardAsArray, getArrayBoardAsArray, getElementByXYArr
 } from './utils';
-import pathFinder from 'a-star-finder';
+import PF from 'pathfinding';
 
 /**
  *
@@ -50,6 +50,8 @@ export function getNextSnakeMove(board, logger) {
     const sorround = getSorround(raitingsBoard, headPosition); // (LEFT, UP, RIGHT, DOWN)
     logger('Sorround: ' + JSON.stringify(sorround, undefined, '  '));
 
+    //console.log(raitingsBoard)
+
     const command = getCommandByRaitings(sorround);
     console.timeEnd('st');
     return command;
@@ -63,7 +65,7 @@ function renderPath(filteredBoard, path) {
     var size = getBoardSize(filteredBoard);
     if (path && path.length) {
         path.forEach(([x, y]) => {
-            filteredBoard[size * y + x] = 'H';
+            filteredBoard[size * y + x] = '.';
         })
     }
     filteredBoard = filteredBoard.join('');
@@ -75,7 +77,12 @@ function getWheigts(board, headPosition, logger) {
     const wheigtBoard = [];
     const boardSize = getBoardSize(board);
     wheigtBoard.length = boardSize * boardSize;
-    wheigtBoard.forEach((el, idx, arr) => arr[idx] === 0);
+
+    for (let x = 0; x < boardSize; x++) {
+        for (let y = 0; y < boardSize; y++) {
+            wheigtBoard[boardSize * y + x] = 0;
+        }
+    }
 
     var mode = 'normal';
     if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
@@ -94,40 +101,61 @@ function getWheigts(board, headPosition, logger) {
             if (rating > 0) {
                 const filteredBoard = board.split('').map(x => {
                     if (mode === 'normal' && isEnemy(x)) {
-                        return '#';
+                        return 1;
                     } else if (x === ELEMENT.WALL || x === ELEMENT.START_FLOOR) {
-                        return '#';
+                        return 1;
                     } else if (x === ELEMENT.STONE && mode === 'normal') {
-                        return '#';
+                        return 1;
                     } else if (isSelf(x)) {
-                        return '#';
+                        return 1;
                     } else {
-                        return '.';
+                        return 0;
                     }
                 }).join('');
 
-                const boardClone = getBoardAsArray(filteredBoard);
-                const path = pathFinder.getPath(boardClone, [
-                    headPosition.x,
-                    headPosition.y
-                ], [x, y]
-                );
-                renderPath(filteredBoard, path)
+                const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
+                //console.log(boardClone);
+                const grid = new PF.Grid(boardClone);
+                const finder = new PF.AStarFinder();
+                var path = finder.findPath(
+                    headPosition.x, headPosition.y, x, y, grid);
 
                 if (path && path.length > 1) {
                     // logger(`path length: ${path.length}`);
                     path.shift();
-                    var [nextX, nextY] = path.shift();
+                    var [nextX, nextY] = path[0];
                     // logger(`x: ${nextX}, y: ${nextY}`);
+                    renderPath(filteredBoard, path)
 
                     if (wheigtBoard[boardSize * nextY + nextX] >= 0) {
-                        wheigtBoard[boardSize * nextY + nextX] += rating / (path.length * path.length);
+                        var newWalue = (wheigtBoard[boardSize * nextY + nextX]) + rating / (path.length * path.length);
+
+                        if (typeof newWalue === 'undefined') {
+                            throw Error('undef val');
+                        } if (newWalue < 0) {
+                            throw Error('zero val');
+                        }
+
+                        wheigtBoard[boardSize * nextY + nextX] += newWalue;
+                        // var out = {
+                        //     newWalue: newWalue,
+                        //     score: rating / (path.length * path.length),
+                        //     rating: rating,
+                        //     length: path.length,
+                        //     sqrLength: path.length * path.length
+                        // };
+
+                        // console.log(Object.keys(out).map(k => {
+                        //     return `${k} - ${out[k]}`;
+                        // }).join('\n'));
+                    } else {
+                        console.log('______' + wheigtBoard[boardSize * nextY + nextX], nextX, nextY, boardSize);
                     }
                 }
             }
         };
     };
-    wheigtBoard[boardSize * headPosition.y + headPosition.x] = "S";
+    //wheigtBoard[boardSize * headPosition.y + headPosition.x] = "S";
 
     return wheigtBoard;
 
@@ -159,16 +187,24 @@ function rateElement(element, mode) {
     if (element === ELEMENT.NONE) {
         return 0;
     } else if (element === ELEMENT.APPLE) {
-        return 15;
+        return 7;
+    } else if (element === ELEMENT.WALL) {
+        return -11;
     } else if (element === ELEMENT.GOLD) {
-        return 25;
-    } else if (element === ELEMENT.FURY_PILL ||
-        element === ELEMENT.FLYING_PILL) {
-        return 5;
+        return 8;
+    } else if (
+        element === ELEMENT.FURY_PILL ||
+        element === ELEMENT.FLYING_PILL
+    ) {
+        return 2;
     } else if (!isFury && !isFly && isEnemy(element)) {
         return -12
     } else if (isFly && element === ELEMENT.STONE) {
         return 0;
+    } else if (isSelf(element)) {
+        return -5;
+    } else if (element === ELEMENT.STONE) {
+        return -7;
     }
 
     return -10;
