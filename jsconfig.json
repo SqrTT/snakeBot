@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "checkJs": true,
+        "target": "es7"
+    }
+}

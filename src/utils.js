@@ -8,19 +8,19 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
 import {
-  ELEMENT
+    ELEMENT
 } from './constants';
 
 // Here is utils that might help for bot development
@@ -31,12 +31,34 @@ export function getBoardAsString(board) {
 }
 
 export function getBoardAsArray(board) {
-  const size = getBoardSize(board);
-  var result = [];
-  for (var i = 0; i < size; i++) {
-      result.push(board.substring(i * size, (i + 1) * size));
-  }
-  return result;
+    const size = getBoardSize(board);
+    var result = [];
+    for (var i = 0; i < size; i++) {
+        result.push(board.substring(i * size, (i + 1) * size));
+    }
+    return result;
+}
+/**
+ *
+ * @param {[*]} srcboard
+ */
+export function getArrayBoardAsArray(srcboard) {
+    const size = getBoardSize(srcboard);
+    var result = [];
+    var board = Array.from(srcboard);
+    for (var i = 0; i < size; i++) {
+        var line = board.slice(i * size, i * size + size);
+        result.push(line.map(x => {
+            if (x === 'S') {
+                return 'HHHH';
+            } if (x === 0) {
+                return '    ';
+            } else {
+                return x < 0 ?  ' ' + x.toFixed(0) + ' ' : ' ' + x.toFixed(0) + '  '
+             }
+        }).join(''));
+    }
+    return result;
 }
 
 export function getBoardSize(board) {
@@ -54,6 +76,13 @@ export function isAt(board, x, y, element) {
     return getAt(board, x, y) === element;
 }
 
+/**
+ *
+ * @param {*} board
+ * @param {*} x
+ * @param {*} y
+ * @returns {keyof ELEMENT}
+ */
 export function getAt(board, x, y) {
     if (isOutOf(board, x, y)) {
         return ELEMENT.WALL;
@@ -67,9 +96,9 @@ export function isNear(board, x, y, element) {
     }
 
     return isAt(board, x + 1, y, element) ||
-			  isAt(board, x - 1, y, element) ||
-			  isAt(board, x, y + 1, element) ||
-			  isAt(board, x, y - 1, element);
+        isAt(board, x - 1, y, element) ||
+        isAt(board, x, y + 1, element) ||
+        isAt(board, x, y - 1, element);
 }
 
 export function isOutOf(board, x, y) {
@@ -108,12 +137,22 @@ export function getXYByPosition(board, position) {
 
     const size = getBoardSize(board);
     return {
-        x:  position % size,
+        x: position % size,
         y: (position - (position % size)) / size
     };
 }
 
+/**
+ * @returns {keyof ELEMENT}
+ */
 export function getElementByXY(board, position) {
     const size = getBoardSize(board);
     return board[size * position.y + position.x];
+}
+/**
+ * @returns {keyof ELEMENT}
+ */
+export function getElementByXYArr(boardArr, position) {
+    const size = getBoardSize(boardArr);
+    return boardArr[size * position.y + position.x];
 }

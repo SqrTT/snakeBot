@@ -8,12 +8,12 @@
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 3 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
@@ -85,3 +85,27 @@ export const COMMANDS = {
     RIGHT: 'RIGHT',
     ACT: 'ACT', // drop stone if any
 };
+
+export const ENEMY_ELEMENTS = [
+    ELEMENT.ENEMY_HEAD_DOWN,
+    ELEMENT.ENEMY_HEAD_LEFT,
+    ELEMENT.ENEMY_HEAD_RIGHT,
+    ELEMENT.ENEMY_HEAD_UP,
+    ELEMENT.ENEMY_HEAD_DEAD,
+    ELEMENT.ENEMY_HEAD_EVIL,
+    ELEMENT.ENEMY_HEAD_FLY,
+    ELEMENT.ENEMY_HEAD_SLEEP,
+
+    ELEMENT.ENEMY_TAIL_END_DOWN,
+    ELEMENT.ENEMY_TAIL_END_LEFT,
+    ELEMENT.ENEMY_TAIL_END_UP,
+    ELEMENT.ENEMY_TAIL_END_RIGHT,
+    ELEMENT.ENEMY_TAIL_INACTIVE,
+
+    ELEMENT.ENEMY_BODY_HORIZONTAL,
+    ELEMENT.ENEMY_BODY_VERTICAL,
+    ELEMENT.ENEMY_BODY_LEFT_DOWN,
+    ELEMENT.ENEMY_BODY_LEFT_UP,
+    ELEMENT.ENEMY_BODY_RIGHT_DOWN,
+    ELEMENT.ENEMY_BODY_RIGHT_UP
+]
