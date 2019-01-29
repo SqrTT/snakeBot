@@ -96,7 +96,9 @@ function getWheigts(board, headPosition, logger) {
             var something = getAt(board, x, y);
 
             var rating = rateElement(something, mode);
-            wheigtBoard[boardSize * y + x] = rating;
+            if (rating < 0) {
+                wheigtBoard[boardSize * y + x] = rating;
+            }
 
             if (rating > 0) {
                 const filteredBoard = board.split('').map(x => {
@@ -125,10 +127,11 @@ function getWheigts(board, headPosition, logger) {
                     path.shift();
                     var [nextX, nextY] = path[0];
                     // logger(`x: ${nextX}, y: ${nextY}`);
+
                     renderPath(filteredBoard, path)
 
                     if (wheigtBoard[boardSize * nextY + nextX] >= 0) {
-                        var newWalue = (wheigtBoard[boardSize * nextY + nextX]) + rating / (path.length * path.length);
+                        var newWalue = (wheigtBoard[boardSize * nextY + nextX]) + (rating / (path.length * path.length));
 
                         if (typeof newWalue === 'undefined') {
                             throw Error('undef val');
@@ -137,6 +140,9 @@ function getWheigts(board, headPosition, logger) {
                         }
 
                         wheigtBoard[boardSize * nextY + nextX] += newWalue;
+                        // console.log(headPosition.y, headPosition.x);
+                        // console.log(nextY, nextX);
+
                         // var out = {
                         //     newWalue: newWalue,
                         //     score: rating / (path.length * path.length),
@@ -155,7 +161,7 @@ function getWheigts(board, headPosition, logger) {
             }
         };
     };
-    //wheigtBoard[boardSize * headPosition.y + headPosition.x] = "S";
+    wheigtBoard[boardSize * headPosition.y + headPosition.x] = "S";
 
     return wheigtBoard;
 
@@ -187,11 +193,11 @@ function rateElement(element, mode) {
     if (element === ELEMENT.NONE) {
         return 0;
     } else if (element === ELEMENT.APPLE) {
-        return 7;
+        return 20;
     } else if (element === ELEMENT.WALL) {
         return -11;
     } else if (element === ELEMENT.GOLD) {
-        return 8;
+        return 25;
     } else if (
         element === ELEMENT.FURY_PILL ||
         element === ELEMENT.FLYING_PILL
