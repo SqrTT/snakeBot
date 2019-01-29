@@ -19,12 +19,12 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS } from './constants';
+import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS, ENEMY_HEAD } from './constants';
 import {
     isGameOver, getHeadPosition, getElementByXY, getBoardSize, getAt, getBoardAsArray, getArrayBoardAsArray, getElementByXYArr
 } from './utils';
 import PF from 'pathfinding';
-
+var EATING_STONE_SIZE = 2;
 /**
  *
  * @param {string} board
@@ -41,6 +41,23 @@ export function getNextSnakeMove(board, logger) {
     }
 
     logger('Head:' + JSON.stringify(headPosition));
+    var selfSize = 0;
+    var enemiesSize = 0;
+    var enemiesCount = 0;
+    board.split('').forEach(x => {
+        if (isSelf(x)) {
+            selfSize += 1;
+        } else if (isEnemy(x)) {
+            enemiesSize++;
+            if (ENEMY_HEAD.indexOf(x) > -1) {
+                enemiesCount++;
+            }
+        }
+    });
+    var enemiesMiddleLength = Math.ceil(enemiesSize/enemiesCount)
+    logger(`self size: ${selfSize}`);
+    logger(`enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
+    EATING_STONE_SIZE = enemiesMiddleLength > 5 ? 6 : enemiesMiddleLength;
 
     var mode = 'normal';
     if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
@@ -49,12 +66,15 @@ export function getNextSnakeMove(board, logger) {
         mode = 'evil';
     }
 
-    const directions = getDirections(board, headPosition, logger);
+    const directions = getDirections(board, headPosition, selfSize, logger);
     logger('Food amount: ' + JSON.stringify(directions.length));
 
     var el;
-    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 6))) {
-        logger('evil stone:' + el.distance);
+    if ((mode === 'evil' || selfSize > EATING_STONE_SIZE) && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 6))) {
+        logger('fury stone:' + el.distance);
+        return el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 7))) {
+        logger('short fury:' + el.distance);
         return el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
         logger('short gold:' + el.distance);
@@ -67,9 +87,6 @@ export function getNextSnakeMove(board, logger) {
         logger('short fly:' + el.distance);
 
         return el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 7))) {
-        logger('short fury:' + el.distance);
-        return el.command;
     } else {
         logger('many food dir');
         var foodDir = {
@@ -80,7 +97,11 @@ export function getNextSnakeMove(board, logger) {
         }
 
         directions.forEach(x => {
-            foodDir[x.command] += x.element === ELEMENT.GOLD ? 3 : 1;
+            if (x.element === ELEMENT.GOLD) {
+                foodDir[x.command] += 4;
+            } else if (x.element === ELEMENT.APPLE) {
+                foodDir[x.command] += 2;
+            }
         });
         logger(JSON.stringify(foodDir));
 
@@ -113,7 +134,7 @@ function renderPath(filteredBoard, path) {
     console.log(getBoardAsArray(filteredBoard).join('\n'))
 }
 
-function getDirections(board, headPosition, logger) {
+function getDirections(board, headPosition, selfSize, logger) {
     const directions = [];
     const boardSize = getBoardSize(board);
 
@@ -133,9 +154,15 @@ function getDirections(board, headPosition, logger) {
                 const filteredBoard = board.split('').map(x => {
                     if (mode === 'normal' && isEnemy(x)) {
                         return 1;
-                    } else if (x === ELEMENT.WALL || x === ELEMENT.START_FLOOR) {
+                    } else if (
+                        x === ELEMENT.WALL ||
+                        x === ELEMENT.START_FLOOR ||
+                        x === ELEMENT.ENEMY_TAIL_INACTIVE ||
+                        x === ELEMENT.ENEMY_HEAD_DEAD ||
+                        x === ELEMENT.ENEMY_HEAD_SLEEP
+                    ) {
                         return 1;
-                    } else if (x === ELEMENT.STONE && mode === 'normal') {
+                    } else if (x === ELEMENT.STONE && mode === 'normal' && selfSize < EATING_STONE_SIZE + 1) {
                         return 1;
                     } else if (isSelf(x)) {
                         return 1;
@@ -220,12 +247,10 @@ function rateElement(element, mode) {
         return 2;
     } else if (!isFury && !isFly && isEnemy(element)) {
         return -12
-    } else if ((isFly || isFury )&& element === ELEMENT.STONE) {
+    } else if (element === ELEMENT.STONE) {
         return 3;
     } else if (isSelf(element)) {
         return -5;
-    } else if (element === ELEMENT.STONE) {
-        return -7;
     }
 
     return -10;
