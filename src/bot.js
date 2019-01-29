@@ -42,19 +42,59 @@ export function getNextSnakeMove(board, logger) {
 
     logger('Head:' + JSON.stringify(headPosition));
 
-    const raitingsBoard = getWheigts(board, headPosition, logger);
-    //logger('Food: ' + JSON.stringify(raitingsBoard));
+    var mode = 'normal';
+    if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
+        mode = 'fly';
+    } else if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_EVIL) {
+        mode = 'evil';
+    }
 
-    //console.log(JSON.stringify(getArrayBoardAsArray(raitingsBoard), undefined, '\t'));
+    const directions = getDirections(board, headPosition, logger);
+    logger('Food amount: ' + JSON.stringify(directions.length));
 
-    const sorround = getSorround(raitingsBoard, headPosition); // (LEFT, UP, RIGHT, DOWN)
-    logger('Sorround: ' + JSON.stringify(sorround, undefined, '  '));
+    var el;
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 6))) {
+        logger('evil stone:' + el.distance);
+        return el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
+        logger('short gold:' + el.distance);
+        return el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 10))) {
+        logger('short apple:' + el.distance);
 
-    //console.log(raitingsBoard)
+        return el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.FLYING_PILL && x.distance < 3))) {
+        logger('short fly:' + el.distance);
 
-    const command = getCommandByRaitings(sorround);
-    console.timeEnd('st');
-    return command;
+        return el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 7))) {
+        logger('short fury:' + el.distance);
+        return el.command;
+    } else {
+        logger('many food dir');
+        var foodDir = {
+            [COMMANDS.LEFT]: 0,
+            [COMMANDS.RIGHT]: 0,
+            [COMMANDS.DOWN]: 0,
+            [COMMANDS.UP]: 0
+        }
+
+        directions.forEach(x => {
+            foodDir[x.command] += x.element === ELEMENT.GOLD ? 3 : 1;
+        });
+        logger(JSON.stringify(foodDir));
+
+        var nextCommand = 'ACT';
+        var nextWheight = 0;
+
+        Object.keys(foodDir).forEach(cmnd => {
+            if (nextWheight < foodDir[cmnd]) {
+                nextWheight = foodDir[cmnd];
+                nextCommand = cmnd;
+            }
+        })
+        return nextCommand;
+    }
 }
 
 function renderPath(filteredBoard, path) {
@@ -73,16 +113,9 @@ function renderPath(filteredBoard, path) {
     console.log(getBoardAsArray(filteredBoard).join('\n'))
 }
 
-function getWheigts(board, headPosition, logger) {
-    const wheigtBoard = [];
+function getDirections(board, headPosition, logger) {
+    const directions = [];
     const boardSize = getBoardSize(board);
-    wheigtBoard.length = boardSize * boardSize;
-
-    for (let x = 0; x < boardSize; x++) {
-        for (let y = 0; y < boardSize; y++) {
-            wheigtBoard[boardSize * y + x] = 0;
-        }
-    }
 
     var mode = 'normal';
     if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
@@ -93,14 +126,10 @@ function getWheigts(board, headPosition, logger) {
 
     for (let x = 0; x < boardSize; x++) {
         for (let y = 0; y < boardSize; y++) {
-            var something = getAt(board, x, y);
 
-            var rating = rateElement(something, mode);
-            if (rating < 0) {
-                wheigtBoard[boardSize * y + x] = rating;
-            }
+            var element = getAt(board, x, y);
 
-            if (rating > 0) {
+            if (rateElement(element, mode) > 0) {
                 const filteredBoard = board.split('').map(x => {
                     if (mode === 'normal' && isEnemy(x)) {
                         return 1;
@@ -116,7 +145,7 @@ function getWheigts(board, headPosition, logger) {
                 }).join('');
 
                 const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
-                //console.log(boardClone);
+
                 const grid = new PF.Grid(boardClone);
                 const finder = new PF.AStarFinder();
                 var path = finder.findPath(
@@ -126,45 +155,31 @@ function getWheigts(board, headPosition, logger) {
                     // logger(`path length: ${path.length}`);
                     path.shift();
                     var [nextX, nextY] = path[0];
-                    // logger(`x: ${nextX}, y: ${nextY}`);
 
-                    renderPath(filteredBoard, path)
-
-                    if (wheigtBoard[boardSize * nextY + nextX] >= 0) {
-                        var newWalue = (wheigtBoard[boardSize * nextY + nextX]) + (rating / (path.length * path.length));
-
-                        if (typeof newWalue === 'undefined') {
-                            throw Error('undef val');
-                        } if (newWalue < 0) {
-                            throw Error('zero val');
-                        }
-
-                        wheigtBoard[boardSize * nextY + nextX] += newWalue;
-                        // console.log(headPosition.y, headPosition.x);
-                        // console.log(nextY, nextX);
-
-                        // var out = {
-                        //     newWalue: newWalue,
-                        //     score: rating / (path.length * path.length),
-                        //     rating: rating,
-                        //     length: path.length,
-                        //     sqrLength: path.length * path.length
-                        // };
-
-                        // console.log(Object.keys(out).map(k => {
-                        //     return `${k} - ${out[k]}`;
-                        // }).join('\n'));
-                    } else {
-                        console.log('______' + wheigtBoard[boardSize * nextY + nextX], nextX, nextY, boardSize);
-                    }
+                    directions.push({
+                        element: element,
+                        distance: path.length,
+                        command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
+                    });
                 }
             }
-        };
-    };
-    wheigtBoard[boardSize * headPosition.y + headPosition.x] = "S";
+        }
+    }
+    directions.sort((a, b) => a.distance - b.distance);
 
-    return wheigtBoard;
+    return directions;
+}
 
+function getCoomandByCoord(x, y, x2, y2) {
+    if (x < x2) {
+        return COMMANDS.RIGHT;
+    } else if (x > x2) {
+        return COMMANDS.LEFT;
+    } else if (y > y2) {
+        return COMMANDS.UP;
+    } else {
+        return COMMANDS.DOWN;
+    }
 }
 
 function getSorround(board, position) {
@@ -205,8 +220,8 @@ function rateElement(element, mode) {
         return 2;
     } else if (!isFury && !isFly && isEnemy(element)) {
         return -12
-    } else if (isFly && element === ELEMENT.STONE) {
-        return 0;
+    } else if ((isFly || isFury )&& element === ELEMENT.STONE) {
+        return 3;
     } else if (isSelf(element)) {
         return -5;
     } else if (element === ELEMENT.STONE) {
