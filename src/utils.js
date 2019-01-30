@@ -20,7 +20,7 @@
  * #L%
  */
 import {
-    ELEMENT
+    ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY
 } from './constants';
 
 // Here is utils that might help for bot development
@@ -69,6 +69,33 @@ export function isGameOver(board) {
     return board.indexOf(ELEMENT.HEAD_DEAD) !== -1;
 }
 
+export function isSleep(board) {
+    return board.indexOf(ELEMENT.HEAD_SLEEP) !== -1;
+}
+/**
+ *
+ * @param {[number, number]} param0
+ * @param {[number, number]} param1
+ */
+export function sumPositions([x1, y1], [x2, y2]) {
+    return [x1 + x2, y1 + y2];
+}
+/**
+ *
+ * @param {[number, number]} param0
+ * @param {number} x
+ */
+export function multPositions([x1, y1], x) {
+    return [x1 * x, y1 * x];
+}
+
+export function isEnemyHead(e) {
+    return ENEMY_NORMAL_HEAD.indexOf(e) !== -1;
+}
+export function isEnemyBody(e) {
+    return ENEMY_BODY.indexOf(e) !== -1;
+}
+
 export function isAt(board, x, y, element) {
     if (isOutOf(board, x, y)) {
         return false;
@@ -81,7 +108,6 @@ export function isAt(board, x, y, element) {
  * @param {*} board
  * @param {*} x
  * @param {*} y
- * @returns {keyof ELEMENT}
  */
 export function getAt(board, x, y) {
     if (isOutOf(board, x, y)) {

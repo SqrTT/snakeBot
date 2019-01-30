@@ -19,13 +19,14 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS, ENEMY_HEAD } from './constants';
+import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS, ENEMY_HEAD, ENEMY_HEAD_TO_DIRECTION, DIRECTION } from './constants';
 import {
-    isGameOver, getHeadPosition, getElementByXY, getBoardSize, getAt, getBoardAsArray, getArrayBoardAsArray, getElementByXYArr
+    isGameOver, getHeadPosition, getElementByXY, getBoardSize, getAt, getBoardAsArray, getElementByXYArr, isSleep, isEnemyHead, multPositions, sumPositions, isEnemyBody
 } from './utils';
 import PF from 'pathfinding';
 const EATING_STONE_SIZE = 6;
-
+let turnsCount = 0;
+let stayOnTheWayCount = 0;
 export function getNextSnakeMove(board, logger) {
     console.time('move');
     const res = getNextSnakeMoveInner(board, logger);
@@ -41,12 +42,17 @@ function getNextSnakeMoveInner(board, logger) {
     if (isGameOver(board)) {
         return '';
     }
+    if (isSleep(board)) {
+        turnsCount = 0;
+    } else {
+        turnsCount++;
+    }
     const headPosition = getHeadPosition(board);
     if (!headPosition) {
         return '';
     }
 
-    logger('Head:' + JSON.stringify(headPosition));
+    logger(`Turn: ${turnsCount} - Head: x:${headPosition.x} y: ${headPosition.y}`);
     var selfSize = 0;
     var enemiesSize = 0;
     var enemiesCount = 0;
@@ -61,9 +67,8 @@ function getNextSnakeMoveInner(board, logger) {
         }
     });
     var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
-    logger(`self size: ${selfSize}`);
-    logger(`enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
-    //EATING_STONE_SIZE = enemiesMiddleLength > 5 ? 6 : enemiesMiddleLength + 1;
+    logger(`Size: ${selfSize}`);
+    logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
 
     var mode = 'normal';
     if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
@@ -78,13 +83,39 @@ function getNextSnakeMoveInner(board, logger) {
     var el;
     var ACT = mode === 'evil' ? 'ACT,' : '';
 
+    /// attack
+    // cut body
+    if (mode === 'evil' && (el = directions.find(x => (isEnemyBody(x.element) && isEnemyHead(x.element)) && x.distance < 5))) {
+        logger('attack enemy body:' + el.distance);
+        console.log('attack enemy body:' + el.distance);
+
+        return ACT + el.command;
+    }
+    // stay on the way
+    if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 2 && isEnemyHead(x.element) && x.distance < 2))) {
+        logger('stay on the way 2:' + el.distance);
+        console.log('stay on the way 2:' + el.distance);
+
+        stayOnTheWayCount++;
+        return ACT + el.command;
+    } else if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 3 && isEnemyHead(x.element) && x.distance < 3))) {
+        logger('stay on the way 3:' + el.distance);
+        console.log('stay on the way 3:' + el.distance);
+
+        stayOnTheWayCount++;
+        return ACT + el.command;
+    } else {
+        stayOnTheWayCount = 0;
+    }
+    ///
+
     if ((mode === 'evil' || selfSize > EATING_STONE_SIZE) && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 9))) {
         logger('fury stone:' + el.distance);
         return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 3))) {
-        logger('short apple:' + el.distance);
+    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 2))) {
+        logger('extra short apple:' + el.distance);
         return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 10))) {
+    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 15))) {
         logger('short fury:' + el.distance);
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
@@ -109,7 +140,7 @@ function getNextSnakeMoveInner(board, logger) {
 
         directions.forEach(x => {
             if (x.element === ELEMENT.GOLD) {
-                foodDir[x.command] += 4;
+                foodDir[x.command] += 6;
             } else if (x.element === ELEMENT.APPLE) {
                 foodDir[x.command] += 2;
             }
@@ -130,7 +161,7 @@ function getNextSnakeMoveInner(board, logger) {
 }
 
 
-function getDirections(board, headPosition, selfSize, rateElement) {
+function getDirections(board, headPosition, selfSize, rateElement, findFloor = false) {
     const directions = [];
     const boardSize = getBoardSize(board);
 
@@ -152,7 +183,7 @@ function getDirections(board, headPosition, selfSize, rateElement) {
                         return 1;
                     } else if (
                         x === ELEMENT.WALL ||
-                        x === ELEMENT.START_FLOOR ||
+                        (x === ELEMENT.START_FLOOR && !findFloor) ||
                         x === ELEMENT.ENEMY_TAIL_INACTIVE ||
                         x === ELEMENT.ENEMY_HEAD_DEAD ||
                         x === ELEMENT.ENEMY_HEAD_SLEEP
@@ -169,55 +200,60 @@ function getDirections(board, headPosition, selfSize, rateElement) {
 
                 const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
 
-                // mark no return paths
-                // for (let xN = 0; xN < boardSize; xN++) {
-                //     for (let yN = 0; yN < boardSize; yN++) {
-                //         let cnt = 0;
-                //         if (boardClone[yN][xN + 1] !== 0) {
-                //             cnt++;
-                //         }
-                //         if (boardClone[yN][xN - 1] !== 0) {
-                //             cnt++;
-                //         }
-                //         if (!boardClone[yN + 1] || boardClone[yN + 1][xN] !== 0) {
-                //             cnt++;
-                //         }
-                //         if (!boardClone[yN - 1] || boardClone[yN - 1][xN] !== 0) {
-                //             cnt++;
-                //         }
-                //         if (cnt > 2) {
-                //             boardClone[yN][xN] = 1;
-                //         }
-                //     }
-                // }
+                if (isEnemyHead(element)) {
+                    const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
+                    [2, 3, 4].forEach(ahead => {
+                        const currentHeadPos = multPositions(DIRECTION[headDirection], ahead);
+                        const [nextMoveX, nextMoveY] = sumPositions([x, y], currentHeadPos);
 
-                const grid = new PF.Grid(boardClone);
-                const finder = new PF.AStarFinder();
-                var path = finder.findPath(
-                    headPosition.x, headPosition.y, x, y, grid);
+                        if (boardClone[nextMoveY] && boardClone[nextMoveY][nextMoveX] === 0) {
+                            var headPath = getPaths(boardClone, headPosition, nextMoveX, nextMoveY);
 
+                            if (headPath && headPath.length > 1 && !isDeadEnd(board, x, y, headPath)) {
+
+                                //headPath.shift();
+                                const [nextX, nextY] = headPath[1];
+
+
+                                directions.push({
+                                    element: element,
+                                    ahead: ahead,
+                                    distance: headPath.length,
+                                    command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
+                                });
+                            }
+                        }
+                    });
+                }
+                const path = getPaths(boardClone, headPosition, x, y);
                 if (path && path.length > 1) {
                     // logger(`path length: ${path.length}`);
-                    path.shift();
-                    var [nextX, nextY] = path[0];
+                    //path.shift();
+                    const [nextX, nextY] = path[1];
 
-                    if (element === ELEMENT.FURY_PILL) {
-                        const stones = getDirections(board, ({ x, y }), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
+                    if (findFloor || !isDeadEnd(board, x, y, path)) {
+                        if (element === ELEMENT.FURY_PILL && path.length >= 6) {
+                            const stones = getDirections(board, ({ x, y }), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
 
-                        if (path.length < 6 || (stones && stones.length && stones[0].distance < 8)) {
-                            //console.log('see firy pill');
+                            if ((stones && stones.length && stones[0].distance < 8)) {
+                                //console.log('see firy pill');
+                                directions.push({
+                                    element: element,
+                                    distance: path.length,
+                                    command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
+                                });
+                            }
+                        } else {
                             directions.push({
                                 element: element,
                                 distance: path.length,
                                 command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
                             });
                         }
-                    } else {
-                        directions.push({
-                            element: element,
-                            distance: path.length,
-                            command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                        });
+                    }
+
+                    if (findFloor && directions.length) {
+                        return directions;
                     }
                 }
             }
@@ -228,6 +264,25 @@ function getDirections(board, headPosition, selfSize, rateElement) {
     return directions;
 }
 
+function getPaths(boardClone, headPosition, x, y) {
+    const grid = new PF.Grid(boardClone);
+    const finder = new PF.AStarFinder();
+    var path = finder.findPath(headPosition.x, headPosition.y, x, y, grid);
+    return path;
+}
+
+function isDeadEnd(board, x, y, path) {
+    const arrayBoard = getBoardAsArray(board).map(x => x.split(''));
+    path.forEach(([x, y]) => {
+        arrayBoard[y][x] = ELEMENT.WALL;
+    });
+    arrayBoard[y][x] = 'X';
+    const strBoard = arrayBoard.map(x => x.join('')).join('');
+
+    var dir = getDirections(strBoard, { x, y }, +Infinity, (e) => e === ELEMENT.START_FLOOR, true)
+
+    return dir.length === 0;
+}
 function getCoomandByCoord(x, y, x2, y2) {
     if (x < x2) {
         return COMMANDS.RIGHT;
@@ -259,10 +314,7 @@ function isSelf(element) {
     return SELF_ELEMENTS.indexOf(element) > -1;
 }
 
-function rateElement(element, mode) {
-    var isFly = mode === 'fly';
-    var isFury = mode === 'evil';
-
+function rateElement(element) {
     if (element === ELEMENT.NONE) {
         return 0;
     } else if (element === ELEMENT.APPLE) {
@@ -276,8 +328,8 @@ function rateElement(element, mode) {
         element === ELEMENT.FLYING_PILL
     ) {
         return 2;
-    } else if (!isFury && !isFly && isEnemy(element)) {
-        return -12
+    } else if (isEnemy(element)) {
+        return 2;
     } else if (element === ELEMENT.STONE) {
         return 3;
     } else if (isSelf(element)) {

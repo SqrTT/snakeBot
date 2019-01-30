@@ -52,7 +52,7 @@ function processBoard(board) {
     var answer = getNextSnakeMove(board, logger);
     var boardString = getBoardAsString(board);
 
-    var logMessage = boardString + "\n\n";
+    var logMessage = '';
     if (programLogs) {
         logMessage += "-----------------------------------\n";
         logMessage += programLogs;
@@ -61,7 +61,8 @@ function processBoard(board) {
     logMessage += "Answer: " + answer + "\n";
 
     printBoard(boardString);
-    printLog(logMessage);
+    printLog(logMessage + '\n\n' + boardString);
+
     return answer;
 }
 
@@ -88,3 +89,7 @@ function printLog(text) {
         textarea.value = text + "\n" + textarea.value;
     }
 }
+
+setTimeout(() => {
+    window.location.reload();
+}, 60 * 1000)
