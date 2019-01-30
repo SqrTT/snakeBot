@@ -24,17 +24,23 @@ import {
     isGameOver, getHeadPosition, getElementByXY, getBoardSize, getAt, getBoardAsArray, getArrayBoardAsArray, getElementByXYArr
 } from './utils';
 import PF from 'pathfinding';
-var EATING_STONE_SIZE = 2;
+const EATING_STONE_SIZE = 6;
+
+export function getNextSnakeMove(board, logger) {
+    console.time('move');
+    const res = getNextSnakeMoveInner(board, logger);
+    console.timeEnd('move');
+    return res;
+}
 /**
  *
  * @param {string} board
  * @param {(asg: any)=> void} logger
  */
-export function getNextSnakeMove(board, logger) {
+function getNextSnakeMoveInner(board, logger) {
     if (isGameOver(board)) {
         return '';
     }
-    console.time('st');
     const headPosition = getHeadPosition(board);
     if (!headPosition) {
         return '';
@@ -54,10 +60,10 @@ export function getNextSnakeMove(board, logger) {
             }
         }
     });
-    var enemiesMiddleLength = Math.ceil(enemiesSize/enemiesCount)
+    var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
     logger(`self size: ${selfSize}`);
     logger(`enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
-    EATING_STONE_SIZE = enemiesMiddleLength > 5 ? 6 : enemiesMiddleLength;
+    //EATING_STONE_SIZE = enemiesMiddleLength > 5 ? 6 : enemiesMiddleLength + 1;
 
     var mode = 'normal';
     if (getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
@@ -66,27 +72,32 @@ export function getNextSnakeMove(board, logger) {
         mode = 'evil';
     }
 
-    const directions = getDirections(board, headPosition, selfSize, logger);
+    const directions = getDirections(board, headPosition, selfSize, rateElement);
     logger('Food amount: ' + JSON.stringify(directions.length));
 
     var el;
-    if ((mode === 'evil' || selfSize > EATING_STONE_SIZE) && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 6))) {
+    var ACT = mode === 'evil' ? 'ACT,' : '';
+
+    if ((mode === 'evil' || selfSize > EATING_STONE_SIZE) && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 9))) {
         logger('fury stone:' + el.distance);
-        return el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 7))) {
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 3))) {
+        logger('short apple:' + el.distance);
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 10))) {
         logger('short fury:' + el.distance);
-        return el.command;
+        return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
         logger('short gold:' + el.distance);
-        return el.command;
+        return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 10))) {
         logger('short apple:' + el.distance);
 
-        return el.command;
+        return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.FLYING_PILL && x.distance < 3))) {
         logger('short fly:' + el.distance);
 
-        return el.command;
+        return ACT + el.command;
     } else {
         logger('many food dir');
         var foodDir = {
@@ -114,27 +125,12 @@ export function getNextSnakeMove(board, logger) {
                 nextCommand = cmnd;
             }
         })
-        return nextCommand;
+        return ACT + nextCommand;
     }
 }
 
-function renderPath(filteredBoard, path) {
-    if (true) {
-        return;
-    }
-    filteredBoard = filteredBoard.split('');
-    var size = getBoardSize(filteredBoard);
-    if (path && path.length) {
-        path.forEach(([x, y]) => {
-            filteredBoard[size * y + x] = '.';
-        })
-    }
-    filteredBoard = filteredBoard.join('');
 
-    console.log(getBoardAsArray(filteredBoard).join('\n'))
-}
-
-function getDirections(board, headPosition, selfSize, logger) {
+function getDirections(board, headPosition, selfSize, rateElement) {
     const directions = [];
     const boardSize = getBoardSize(board);
 
@@ -173,6 +169,28 @@ function getDirections(board, headPosition, selfSize, logger) {
 
                 const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
 
+                // mark no return paths
+                // for (let xN = 0; xN < boardSize; xN++) {
+                //     for (let yN = 0; yN < boardSize; yN++) {
+                //         let cnt = 0;
+                //         if (boardClone[yN][xN + 1] !== 0) {
+                //             cnt++;
+                //         }
+                //         if (boardClone[yN][xN - 1] !== 0) {
+                //             cnt++;
+                //         }
+                //         if (!boardClone[yN + 1] || boardClone[yN + 1][xN] !== 0) {
+                //             cnt++;
+                //         }
+                //         if (!boardClone[yN - 1] || boardClone[yN - 1][xN] !== 0) {
+                //             cnt++;
+                //         }
+                //         if (cnt > 2) {
+                //             boardClone[yN][xN] = 1;
+                //         }
+                //     }
+                // }
+
                 const grid = new PF.Grid(boardClone);
                 const finder = new PF.AStarFinder();
                 var path = finder.findPath(
@@ -183,11 +201,24 @@ function getDirections(board, headPosition, selfSize, logger) {
                     path.shift();
                     var [nextX, nextY] = path[0];
 
-                    directions.push({
-                        element: element,
-                        distance: path.length,
-                        command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                    });
+                    if (element === ELEMENT.FURY_PILL) {
+                        const stones = getDirections(board, ({ x, y }), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
+
+                        if (path.length < 6 || (stones && stones.length && stones[0].distance < 8)) {
+                            //console.log('see firy pill');
+                            directions.push({
+                                element: element,
+                                distance: path.length,
+                                command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
+                            });
+                        }
+                    } else {
+                        directions.push({
+                            element: element,
+                            distance: path.length,
+                            command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
+                        });
+                    }
                 }
             }
         }
@@ -254,20 +285,4 @@ function rateElement(element, mode) {
     }
 
     return -10;
-}
-
-/** */
-function getCommandByRaitings(raitings) {
-    var indexToCommand = [COMMANDS.LEFT, COMMANDS.UP, COMMANDS.RIGHT, COMMANDS.DOWN];
-    var maxIndex = 0;
-    var max = -Infinity;
-    for (var i = 0; i < raitings.length; i++) {
-        var r = raitings[i];
-        if (r > max) {
-            maxIndex = i;
-            max = r;
-        }
-    }
-
-    return indexToCommand[maxIndex];
 }

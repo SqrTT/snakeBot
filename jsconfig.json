@@ -2,6 +2,6 @@
     "compilerOptions": {
         "baseUrl": ".",
         "checkJs": true,
-        "target": "es7"
+        "target": "es6"
     }
 }
