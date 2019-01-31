@@ -27,6 +27,8 @@ import PF from 'pathfinding';
 const EATING_STONE_SIZE = 6;
 let turnsCount = 0;
 let stayOnTheWayCount = 0;
+let evilCount = 0;
+
 export function getNextSnakeMove(board, logger) {
     console.time('move');
     const res = getNextSnakeMoveInner(board, logger);
@@ -47,12 +49,16 @@ function getNextSnakeMoveInner(board, logger) {
     } else {
         turnsCount++;
     }
+
+    if (evilCount > 0) {
+        evilCount--;
+    }
     const headPosition = getHeadPosition(board);
     if (!headPosition) {
         return '';
     }
 
-    logger(`Turn: ${turnsCount} - Head: x:${headPosition.x} y: ${headPosition.y}`);
+    logger(`turn: ${turnsCount} x:${headPosition.x} y: ${headPosition.y} evil: ${evilCount}`);
     var selfSize = 0;
     var enemiesSize = 0;
     var enemiesCount = 0;
@@ -84,23 +90,34 @@ function getNextSnakeMoveInner(board, logger) {
     var ACT = mode === 'evil' ? 'ACT,' : '';
 
     /// attack
+    // attack enemy head (evil)
+    if (mode === 'evil' && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
+        logger('attack enemy head (evil): ' + el.distance);
+        return ACT + el.command;
+    }
+
+    // attack enemy head (normal)
+    if (selfSize - 2 > enemiesSize && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
+        logger('attack enemy head (normal): ' + el.distance);
+        return ACT + el.command;
+    }
     // cut body
-    if (mode === 'evil' && (el = directions.find(x => (isEnemyBody(x.element) && isEnemyHead(x.element)) && x.distance < 5))) {
+    if (mode === 'evil' && (el = directions.find(x => (isEnemyBody(x.element) || isEnemyHead(x.element)) && x.distance < evilCount + 1))) {
         logger('attack enemy body:' + el.distance);
-        console.log('attack enemy body:' + el.distance);
+        console.log('attack enemy body/head: ' + el.distance);
 
         return ACT + el.command;
     }
     // stay on the way
     if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 2 && isEnemyHead(x.element) && x.distance < 2))) {
-        logger('stay on the way 2:' + el.distance);
-        console.log('stay on the way 2:' + el.distance);
+        logger('stay on the way 2: ' + el.distance);
+        console.log('stay on the way 2: ' + el.distance);
 
         stayOnTheWayCount++;
         return ACT + el.command;
     } else if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 3 && isEnemyHead(x.element) && x.distance < 3))) {
-        logger('stay on the way 3:' + el.distance);
-        console.log('stay on the way 3:' + el.distance);
+        logger('stay on the way 3: ' + el.distance);
+        console.log('stay on the way 3: ' + el.distance);
 
         stayOnTheWayCount++;
         return ACT + el.command;
@@ -108,25 +125,31 @@ function getNextSnakeMoveInner(board, logger) {
         stayOnTheWayCount = 0;
     }
     ///
-
-    if ((mode === 'evil' || selfSize > EATING_STONE_SIZE) && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 9))) {
-        logger('fury stone:' + el.distance);
+    if (selfSize >= EATING_STONE_SIZE  && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
+        logger('self cut stone: ' + el.distance);
         return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 2))) {
-        logger('extra short apple:' + el.distance);
+    }
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < evilCount))) {
+        logger('fury stone: ' + el.distance);
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance === 1))) {
+        logger('extra short apple: ' + el.distance);
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 15))) {
-        logger('short fury:' + el.distance);
+        logger('short fury: ' + el.distance);
+        if (el.distance === 1) {
+            evilCount = 10;
+        }
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
-        logger('short gold:' + el.distance);
+        logger('short gold: ' + el.distance);
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 10))) {
-        logger('short apple:' + el.distance);
+        logger('short apple: ' + el.distance);
 
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.FLYING_PILL && x.distance < 3))) {
-        logger('short fly:' + el.distance);
+        logger('short fly: ' + el.distance);
 
         return ACT + el.command;
     } else {
@@ -202,7 +225,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
 
                 if (isEnemyHead(element)) {
                     const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
-                    [2, 3, 4].forEach(ahead => {
+                    [1, 2, 3].forEach(ahead => {
                         const currentHeadPos = multPositions(DIRECTION[headDirection], ahead);
                         const [nextMoveX, nextMoveY] = sumPositions([x, y], currentHeadPos);
 
@@ -218,7 +241,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                                 directions.push({
                                     element: element,
                                     ahead: ahead,
-                                    distance: headPath.length,
+                                    distance: headPath.length -1,
                                     command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
                                 });
                             }
@@ -239,14 +262,14 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                                 //console.log('see firy pill');
                                 directions.push({
                                     element: element,
-                                    distance: path.length,
+                                    distance: path.length -1,
                                     command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
                                 });
                             }
                         } else {
                             directions.push({
                                 element: element,
-                                distance: path.length,
+                                distance: path.length -1,
                                 command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
                             });
                         }
@@ -293,16 +316,6 @@ function getCoomandByCoord(x, y, x2, y2) {
     } else {
         return COMMANDS.DOWN;
     }
-}
-
-function getSorround(board, position) {
-    const p = position;
-    return [
-        getElementByXYArr(board, { x: p.x - 1, y: p.y }), // LEFT
-        getElementByXYArr(board, { x: p.x, y: p.y - 1 }), // UP
-        getElementByXYArr(board, { x: p.x + 1, y: p.y }), // RIGHT
-        getElementByXYArr(board, { x: p.x, y: p.y + 1 }) // DOWN
-    ];
 }
 
 

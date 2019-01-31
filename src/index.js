@@ -21,6 +21,7 @@
  */
 import { getNextSnakeMove } from './bot';
 import { getBoardAsString } from './utils';
+var score;
 
 var URL = process.env.GAME_URL || '';
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");
@@ -60,8 +61,21 @@ function processBoard(board) {
     logMessage += "-----------------------------------\n";
     logMessage += "Answer: " + answer + "\n";
 
+    if (score) {
+        var textarea = document.getElementById("score");
+        if (textarea) {
+            textarea.innerHTML = `Score: ${score.score}   ${score.info}\n`;
+        }
+    }
+
     printBoard(boardString);
     printLog(logMessage + '\n\n' + boardString);
+
+    if (socketScore && socketScore.OPEN) {
+        setTimeout(() => {
+            socketScore.send('{name: "getScreen", allPlayersScreen: false, players: ["tolik@sqrtt.pro"], gameName: "snakebattle"}');
+        }, 1);
+    }
 
     return answer;
 }
@@ -90,6 +104,29 @@ function printLog(text) {
     }
 }
 
+
+var socketScore = new WebSocket('wss://game1.epam-bot-challenge.com.ua/codenjoy-contest/screen-ws?user=tolik@sqrtt.pro');
+
+socketScore.addEventListener('open', function (event) {
+    console.log('Score Open');
+});
+
+socketScore.addEventListener('close', function (event) {
+    console.log('Score Closed');
+});
+
+
+socketScore.addEventListener('message', function (event) {
+    const data = JSON.parse(event.data);
+    //console.log(data);
+    score = {
+        score: data['tolik@sqrtt.pro'].score,
+        info: data['tolik@sqrtt.pro'].info
+    }
+    //socketScore.send(answer);
+});
+
+
 setTimeout(() => {
     window.location.reload();
-}, 60 * 1000)
+}, 5 * 60 * 1000)
