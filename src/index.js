@@ -22,6 +22,8 @@
 import { getNextSnakeMove } from './bot';
 import { getBoardAsString } from './utils';
 var score;
+var roundTotal = 0;
+var ticks = 0;
 
 var URL = process.env.GAME_URL || '';
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");
@@ -38,6 +40,7 @@ socket.addEventListener('close', function (event) {
 
 socket.addEventListener('message', function (event) {
     var pattern = new RegExp(/^board=(.*)$/);
+    ticks++;
     var message = event.data;
     var parameters = message.match(pattern);
     var board = parameters[1];
@@ -62,9 +65,16 @@ function processBoard(board) {
     logMessage += "Answer: " + answer + "\n";
 
     if (score) {
+        if (score.info && score.info.indexOf('+') > -1) {
+            roundTotal += Number(score.info.split('+')[1]);
+        }
+        if (board.indexOf('&') > -1) {
+            roundTotal = 0;
+            ticks = 0;
+        }
         var textarea = document.getElementById("score");
         if (textarea) {
-            textarea.innerHTML = `Score: ${score.score}   ${score.info}\n`;
+            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal/ticks).toFixed(2)}) ${score.info} \n`;
         }
     }
 
