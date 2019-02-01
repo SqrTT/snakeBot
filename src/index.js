@@ -81,7 +81,7 @@ function processBoard(board) {
     printBoard(boardString);
     printLog(logMessage + '\n\n' + boardString);
 
-    if (socketScore && socketScore.OPEN) {
+    if (socketScore && socketScore.OPEN && !socketScore.CONNECTING) {
         setTimeout(() => {
             socketScore.send('{name: "getScreen", allPlayersScreen: false, players: ["tolik@sqrtt.pro"], gameName: "snakebattle"}');
         }, 1);

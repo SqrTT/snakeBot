@@ -80,10 +80,10 @@ export const ELEMENT = {
 };
 
 export const COMMANDS = {
+    RIGHT: 'RIGHT',
     UP: 'UP', // snake momves
     DOWN: 'DOWN',
     LEFT: 'LEFT',
-    RIGHT: 'RIGHT',
     ACT: 'ACT', // drop stone if any
 };
 export const ENEMY_TAIL = [
@@ -125,10 +125,10 @@ export const ENEMIES_HEAD_LIST = [
     ELEMENT.ENEMY_HEAD_LEFT,
     ELEMENT.ENEMY_HEAD_RIGHT,
     ELEMENT.ENEMY_HEAD_UP,
-    //  ENEMY_HEAD_DEAD,
+    ELEMENT.ENEMY_HEAD_DEAD,
     ELEMENT.ENEMY_HEAD_EVIL,
-    ELEMENT.ENEMY_HEAD_FLY
-    //    ENEMY_HEAD_SLEEP
+    ELEMENT.ENEMY_HEAD_FLY,
+    ELEMENT.ENEMY_HEAD_SLEEP
 ];
 
 export const DIRECTIONS_MAP = {

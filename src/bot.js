@@ -19,11 +19,11 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMIES_HEAD_LIST, PLAYER_HEAD_LIST, COMMANDS_LIST } from './constants';
+import { ELEMENT, COMMANDS, ENEMIES_HEAD_LIST, PLAYER_HEAD_LIST, COMMANDS_LIST, DIRECTIONS_MAP } from './constants';
 import {
-    isGameOver, getHeadPosition, getElementByXY, getBoardAsArray, findElementPos
+    isGameOver, getHeadPosition, getElementByXY, getBoardAsArray, findElementPos, sum
 } from './utils';
-import { State } from './simulator';
+import { State, getValAt } from './state';
 
 
 // Bot Example
@@ -35,76 +35,65 @@ export function getNextSnakeMove(board, logger) {
     if (!headPosition) {
         return '';
     }
-    logger('Head:' + JSON.stringify(headPosition));
 
-    const sorround = getSorround(board, headPosition); // (LEFT, UP, RIGHT, DOWN)
-    logger('Sorround: ' + JSON.stringify(sorround));
-
-
-
-    const raitings = sorround.map(rateElement);
-    logger('Raitings:' + JSON.stringify(raitings));
     console.time('board');
+    const arrBoard = getBoardAsArray(board);
     const state = State.getState(board);
+   // console.log(state);
     console.timeEnd('board');
 
     console.time('step');
-    var q = minimax(4, state);
+    var q = minimax(1, state);
     console.timeEnd('step');
 
-    console.log(q);
-
-    const command = getCommandByRaitings(raitings);
+    logger(`next: ${q[1]} ${q[2]}`);
 
     return q[0];
 }
 
-function getMax([a1, value1], [a2, value2]) {
-    return value1 > value2 ? [a1, value1] : [a2, value2];
+function getMax(a, b) {
+    return a[1] > b[1] ? a : b;
 }
-function getMin([a1, value1], [a2, value2]) {
-    return value1 < value2 ? [a1, value1] : [a2, value2];
+function getMin(a, b) {
+    return a[1] < b[1] ? a : b;
 }
 
 /**
  *
  * @param {number} depth
- * @param {State} board
+ * @param {State} state
  */
-function minimax(depth = 0, board) {
+function minimax(depth = 0, state) {
     if (depth < 1) {
-        return [COMMANDS.RIGHT, 0, 'END'];
-    } else if (board.player && !board.player.isDead) {
+        return [COMMANDS.RIGHT, -Infinity, 'END'];
+    } else if (state.player && !state.player.isDead) {
         let maxPlayerVal = ['ACT', -Infinity];
-        let minEnemyVal = ['ACT', +Infinity];
 
         for (let playerAction of COMMANDS_LIST) {
-            for (let enemy of board.enemies) {
-                for (let enemyAction of COMMANDS_LIST) {
+            let minEnemyVal = ['ACT', +Infinity];
+            const nextPos = sum(state.player.head.getPos(), DIRECTIONS_MAP[playerAction]);
 
-                    emulateStep(board, playerAction, playerPos);
-                    // [left, left, left]
-                    // const nextPos = sum(enemyPos, DIRECTIONS_MAP[action]);
+            // short circuit for walls
+            if (state.boardMatrix[nextPos[1]][nextPos[0]] === ELEMENT.WALL) {
+                maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'WALL']);
+            } else if (state.player.isNeck(nextPos)) {
+                maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'NECK']);
+            }else {
+                //for (let enemy of board.enemies) {
+                    //for (let enemyAction of COMMANDS_LIST) {
+                        // all enemies walk in same side (for speed up)
+                        const emulatedStep = state.step(playerAction, state.enemies.map(() => []));
+                        //emulatedStep.scores.shift();
+                        maxPlayerVal = getMax(maxPlayerVal, emulatedStep.scores.shift());
 
-                    // const val = evaluateEnemy(board, enemyPos, nextPos);
-                    // if (val < 10) {
-
-
-                    //     var max = minimax(depth - 1, movedCleanBoard);
-                    //     minEnemyVal = getMin(max, [action, val]);
-                    // } else {
-                    //     minEnemyVal = getMin(minEnemyVal, [action, val]);
-                    // }
-                }
-            }
-
-            const val = evaluatePlayer(board, playerPos, nextPos);
-            if (val >= -10) {
-
-                // const min = minimax(depth - 1, movedCleanBoard, steps);
-                maxPlayerVal = getMax(min, [playerAction, val]);
-            } else {
-                maxPlayerVal = getMax(maxPlayerVal, [playerAction, val]);
+                        for (let score of emulatedStep.scores) {
+                            minEnemyVal = getMin(minEnemyVal, score);
+                        }
+                        const value = minimax(depth -1, emulatedStep.state);
+                        minEnemyVal = getMin(minEnemyVal, value);
+                   // }
+                //}
+                maxPlayerVal = getMax(maxPlayerVal, minEnemyVal);
             }
         }
         return maxPlayerVal;
@@ -114,39 +103,6 @@ function minimax(depth = 0, board) {
 }
 
 
-
-/**
- * @param {Array<[string]>} board
- * @param {string} el
- * @return {Array<[number, number]>}
- */
-function findElementsPos(board, el, limit = Infinity) {
-    const result = [];
-    for (let y in board) {
-        const row = board[y];
-        for (let x in row) {
-            if (el === row[x]) {
-                result.push([Number(x), Number(y)]);
-                if (result.length >= limit) {
-                    return result;
-                }
-            }
-        }
-    }
-    return result;
-}
-
-
-
-function getSorround(board, position) {
-    const p = position;
-    return [
-        getElementByXY(board, { x: p.x - 1, y: p.y }), // LEFT
-        getElementByXY(board, { x: p.x, y: p.y - 1 }), // UP
-        getElementByXY(board, { x: p.x + 1, y: p.y }), // RIGHT
-        getElementByXY(board, { x: p.x, y: p.y + 1 }) // DOWN
-    ];
-}
 
 function rateElement(element) {
     if (element === ELEMENT.NONE) {
