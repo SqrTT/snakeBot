@@ -171,13 +171,13 @@ function getNextSnakeMoveInner(board, logger) {
 
         directions.forEach(x => {
             if (x.element === ELEMENT.GOLD) {
-                foodDir[x.command] += 6;
+                foodDir[x.command] += 6 / (x.distance * x.distance);
             } else if (x.element === ELEMENT.APPLE) {
-                foodDir[x.command] += 2;
+                foodDir[x.command] += 2 / (x.distance * x.distance);
             } else if (x.element === ELEMENT.FURY_PILL) {
-                foodDir[x.command] += 2;
+                foodDir[x.command] += 2 / (x.distance * x.distance);
             } else if (isEnemyHead(x.element)) {
-                foodDir[x.command] += 2;
+                foodDir[x.command] += 3 / (x.distance * x.distance);
             }
         });
         logger(JSON.stringify(foodDir));
@@ -233,7 +233,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                     boardClone[y - 1][x] = 1;
                     boardClone[y][x + 1] = 1;
                     boardClone[y][x - 1] = 1;
-                    console.log('count');
+                    //console.log('count');
                 }
 
                 if (!findFloor && !skipAhead && isEnemyHead(element)) {
