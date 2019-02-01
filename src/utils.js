@@ -70,7 +70,7 @@ exports.getArrayBoardAsArray = getArrayBoardAsArray;
 function getBoardSize(board) {
     return Math.sqrt(board.length);
 }
-exports.export;
+exports.getBoardSize = getBoardSize;;
 
 function isGameOver(board) {
     return board.indexOf(ELEMENT.HEAD_DEAD) !== -1;

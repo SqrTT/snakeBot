@@ -7,8 +7,18 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Jest Tests",
+            "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+            "args": [
+                "-i"
+            ],
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "nodemon",
-            "runtimeExecutable": "npm nodemon",
+            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/nodemon",
             "program": "${workspaceFolder}/main.js",
             "restart": true,
             "console": "integratedTerminal",

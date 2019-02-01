@@ -291,7 +291,7 @@ class State {
         if (elAtPos !== ELEMENT.NONE) {
             scores.push([playerAction, EVALUATION_MAP[mode][elAtPos], elAtPos]);
         } else {// check other els
-            const body = this.snakesElements.find(snakeEl => snakeEl.x === nextPlayerPos[0] && snakeEl.y === nextPlayerPos[0]);
+            const body = this.snakesElements.find(snakeEl => snakeEl.x === nextPlayerPos[0] && snakeEl.y === nextPlayerPos[1]);
 
             if (body) {
                 scores.push([playerAction, EVALUATION_MAP[mode][body.type], body.type]);
@@ -300,7 +300,7 @@ class State {
             }
         }
         /// move player
-        this.player = this.player.move(playerAction);
+        newState.player = this.player.move(playerAction);
 
         ///
 

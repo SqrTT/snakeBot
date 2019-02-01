@@ -31,22 +31,20 @@ function getNextSnakeMove(board, logger) {
     if (isGameOver(board)) {
         return '';
     }
-    const headPosition = getHeadPosition(board);
-    if (!headPosition) {
-        return '';
-    }
 
-    console.time('board');
+    const timeBoard = Date.now();
     const arrBoard = getBoardAsArray(board);
     const state = State.getState(board);
     // console.log(state);
-    console.timeEnd('board');
+    const timeBoardEnd = Date.now();
 
-    console.time('step');
+
+    const timeStep = Date.now();
     var q = minimax(1, state);
-    console.timeEnd('step');
+    const timeStepEnd = Date.now();
 
     logger(`next: ${q[1]} ${q[2]}`);
+    logger(`time: board: ${timeBoardEnd - timeBoard}, step: ${timeStepEnd - timeStep}`);
 
     return q[0];
 }
