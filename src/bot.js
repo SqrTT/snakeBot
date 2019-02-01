@@ -19,15 +19,15 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMIES_HEAD_LIST, PLAYER_HEAD_LIST, COMMANDS_LIST, DIRECTIONS_MAP } from './constants';
-import {
+var { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP } = require('./constants');
+var {
     isGameOver, getHeadPosition, getElementByXY, getBoardAsArray, findElementPos, sum
-} from './utils';
-import { State, getValAt } from './state';
+} = require('./utils');
+var { State, getValAt } = require('./state');
 
 
-// Bot Example
-export function getNextSnakeMove(board, logger) {
+
+function getNextSnakeMove(board, logger) {
     if (isGameOver(board)) {
         return '';
     }
@@ -39,7 +39,7 @@ export function getNextSnakeMove(board, logger) {
     console.time('board');
     const arrBoard = getBoardAsArray(board);
     const state = State.getState(board);
-   // console.log(state);
+    // console.log(state);
     console.timeEnd('board');
 
     console.time('step');
@@ -50,6 +50,7 @@ export function getNextSnakeMove(board, logger) {
 
     return q[0];
 }
+exports.getNextSnakeMove = getNextSnakeMove;
 
 function getMax(a, b) {
     return a[1] > b[1] ? a : b;
@@ -78,20 +79,20 @@ function minimax(depth = 0, state) {
                 maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'WALL']);
             } else if (state.player.isNeck(nextPos)) {
                 maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'NECK']);
-            }else {
+            } else {
                 //for (let enemy of board.enemies) {
-                    //for (let enemyAction of COMMANDS_LIST) {
-                        // all enemies walk in same side (for speed up)
-                        const emulatedStep = state.step(playerAction, state.enemies.map(() => []));
-                        //emulatedStep.scores.shift();
-                        maxPlayerVal = getMax(maxPlayerVal, emulatedStep.scores.shift());
+                //for (let enemyAction of COMMANDS_LIST) {
+                // all enemies walk in same side (for speed up)
+                const emulatedStep = state.step(playerAction, state.enemies.map(() => []));
+                //emulatedStep.scores.shift();
+                maxPlayerVal = getMax(maxPlayerVal, emulatedStep.scores.shift());
 
-                        for (let score of emulatedStep.scores) {
-                            minEnemyVal = getMin(minEnemyVal, score);
-                        }
-                        const value = minimax(depth -1, emulatedStep.state);
-                        minEnemyVal = getMin(minEnemyVal, value);
-                   // }
+                for (let score of emulatedStep.scores) {
+                    minEnemyVal = getMin(minEnemyVal, score);
+                }
+                const value = minimax(depth - 1, emulatedStep.state);
+                minEnemyVal = getMin(minEnemyVal, value);
+                // }
                 //}
                 maxPlayerVal = getMax(maxPlayerVal, minEnemyVal);
             }
@@ -103,33 +104,3 @@ function minimax(depth = 0, state) {
 }
 
 
-
-function rateElement(element) {
-    if (element === ELEMENT.NONE) {
-        return 0;
-    }
-    if (
-        element === ELEMENT.APPLE ||
-        element === ELEMENT.GOLD
-    ) {
-        return 1;
-    }
-
-    return -1;
-}
-
-
-function getCommandByRaitings(raitings) {
-    var indexToCommand = ['LEFT', 'UP', 'RIGHT', 'DOWN'];
-    var maxIndex = 0;
-    var max = -Infinity;
-    for (var i = 0; i < raitings.length; i++) {
-        var r = raitings[i];
-        if (r > max) {
-            maxIndex = i;
-            max = r;
-        }
-    }
-
-    return indexToCommand[maxIndex];
-}

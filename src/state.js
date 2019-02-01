@@ -1,5 +1,5 @@
-import { ELEMENT, COMMANDS, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } from "./constants";
-import { getBoardAsArray, findElementPos, sum, findElementsPos } from "./utils";
+const { ELEMENT, COMMANDS, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
+const { getBoardAsArray, findElementPos, sum, findElementsPos } = require("./utils") ;
 
 
 const EVALUATION_MAP = {
@@ -170,9 +170,10 @@ function setValAt(board, [x, y], value) {
  * @param {[number, number]} param0
  * @returns {string}
  */
-export function getValAt(board, [x, y]) {
+function getValAt(board, [x, y]) {
     return (board[y] && board[y][x]) || ELEMENT.OTHER;
 }
+exports.getValAt = getValAt;
 
 
 class Element {
@@ -257,8 +258,7 @@ class Snake {
         return false;
     }
 }
-
-export class State {
+class State {
     constructor() {
         this.boardMatrix = undefined;
         /**
@@ -431,12 +431,4 @@ export class State {
 
     }
 }
-
-
-
-
-
-
-export function step(board, playerMove, payerPos, enemyes) {
-
-}
+exports.State = State;

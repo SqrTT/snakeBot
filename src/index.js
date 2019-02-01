@@ -19,8 +19,8 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { getNextSnakeMove } from './bot';
-import { getBoardAsString } from './utils';
+var { getNextSnakeMove } = require('./bot');
+var { getBoardAsString } = require('./utils');
 var score;
 var roundTotal = 0;
 var ticks = 0;
@@ -74,18 +74,13 @@ function processBoard(board) {
         }
         var textarea = document.getElementById("score");
         if (textarea) {
-            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal/ticks).toFixed(2)}) ${score.info} \n`;
+            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal / ticks).toFixed(2)}) ${score.info} \n`;
         }
     }
 
     printBoard(boardString);
     printLog(logMessage + '\n\n' + boardString);
 
-    if (socketScore && socketScore.OPEN && !socketScore.CONNECTING) {
-        setTimeout(() => {
-            socketScore.send('{name: "getScreen", allPlayersScreen: false, players: ["tolik@sqrtt.pro"], gameName: "snakebattle"}');
-        }, 1);
-    }
 
     return answer;
 }
@@ -115,28 +110,28 @@ function printLog(text) {
 }
 
 
-var socketScore = new WebSocket('wss://game1.epam-bot-challenge.com.ua/codenjoy-contest/screen-ws?user=tolik@sqrtt.pro');
+// var socketScore = new WebSocket('wss://game1.epam-bot-challenge.com.ua/codenjoy-contest/screen-ws?user=tolik@sqrtt.pro');
 
-socketScore.addEventListener('open', function (event) {
-    console.log('Score Open');
-});
+// socketScore.addEventListener('open', function (event) {
+//     console.log('Score Open');
+// });
 
-socketScore.addEventListener('close', function (event) {
-    console.log('Score Closed');
-});
-
-
-socketScore.addEventListener('message', function (event) {
-    const data = JSON.parse(event.data);
-    //console.log(data);
-    score = {
-        score: data['tolik@sqrtt.pro'].score,
-        info: data['tolik@sqrtt.pro'].info
-    }
-    //socketScore.send(answer);
-});
+// socketScore.addEventListener('close', function (event) {
+//     console.log('Score Closed');
+// });
 
 
-setTimeout(() => {
-    window.location.reload();
-}, 5 * 60 * 1000)
+// socketScore.addEventListener('message', function (event) {
+//     const data = JSON.parse(event.data);
+//     //console.log(data);
+//     score = {
+//         score: data['tolik@sqrtt.pro'].score,
+//         info: data['tolik@sqrtt.pro'].info
+//     }
+//     //socketScore.send(answer);
+// });
+
+
+// setTimeout(() => {
+//     window.location.reload();
+// }, 5 * 60 * 1000)

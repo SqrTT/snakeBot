@@ -19,22 +19,22 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import {
+const {
     ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY
-} from './constants';
+} = require('./constants');
 
 // Here is utils that might help for bot development
-export function getBoardAsString(board) {
+ function getBoardAsString(board) {
     const size = getBoardSize(board);
 
     return getBoardAsArray(board).join("\n");
 }
-
+exports.getBoardAsString = getBoardAsString;
 /**
  *
  * @param {string} board
  */
-export function getBoardAsArray(board) {
+function getBoardAsArray(board) {
     const size = getBoardSize(board);
     var result = [];
     for (var i = 0; i < size; i++) {
@@ -42,11 +42,12 @@ export function getBoardAsArray(board) {
     }
     return result;
 }
+exports.getBoardAsArray = getBoardAsArray;
 /**
  *
  * @param {[*]} srcboard
  */
-export function getArrayBoardAsArray(srcboard) {
+function getArrayBoardAsArray(srcboard) {
     const size = getBoardSize(srcboard);
     var result = [];
     var board = Array.from(srcboard);
@@ -64,34 +65,41 @@ export function getArrayBoardAsArray(srcboard) {
     }
     return result;
 }
+exports.getArrayBoardAsArray = getArrayBoardAsArray;
 
-export function getBoardSize(board) {
+function getBoardSize(board) {
     return Math.sqrt(board.length);
 }
+exports.export;
 
-export function isGameOver(board) {
+function isGameOver(board) {
     return board.indexOf(ELEMENT.HEAD_DEAD) !== -1;
 }
+exports.isGameOver = isGameOver;
 
-export function isSleep(board) {
+function isSleep(board) {
     return board.indexOf(ELEMENT.HEAD_SLEEP) !== -1;
 }
+exports.isSleep = isSleep;
+
 /**
  *
  * @param {[number, number]} param0
  * @param {[number, number]} param1
  */
-export function sumPositions([x1, y1], [x2, y2]) {
+function sumPositions([x1, y1], [x2, y2]) {
     return [x1 + x2, y1 + y2];
 }
+exports.sumPositions = sumPositions;
 /**
  *
  * @param {[number, number]} param0
  * @param {number} x
  */
-export function multPositions([x1, y1], x) {
+function multPositions([x1, y1], x) {
     return [x1 * x, y1 * x];
 }
+exports.multPositions = multPositions;
 
 /**
  *
@@ -99,7 +107,7 @@ export function multPositions([x1, y1], x) {
  * @param {string} el
  * @return {[number, number]}
  */
-export function findElementPos(board, el) {
+function findElementPos(board, el) {
     for (let y in board) {
         const row = board[y];
         for (let x in row) {
@@ -110,6 +118,7 @@ export function findElementPos(board, el) {
     }
     return;
 }
+exports.findElementPos = findElementPos;
 
 
 /**
@@ -117,7 +126,7 @@ export function findElementPos(board, el) {
  * @param {string} el
  * @return {Array<[number, number]>}
  */
-export function findElementsPos(board, el) {
+function findElementsPos(board, el) {
     const result = [];
     for (let y in board) {
         const row = board[y];
@@ -129,23 +138,27 @@ export function findElementsPos(board, el) {
     }
     return result;
 }
+exports.findElementsPos = findElementsPos;
 
 
 
-
-export function isEnemyHead(e) {
+function isEnemyHead(e) {
     return ENEMY_NORMAL_HEAD.indexOf(e) !== -1;
 }
-export function isEnemyBody(e) {
+exports.isEnemyHead = isEnemyHead;
+
+function isEnemyBody(e) {
     return ENEMY_BODY.indexOf(e) !== -1;
 }
+exports.isEnemyBody = isEnemyBody;
 
-export function isAt(board, x, y, element) {
+function isAt(board, x, y, element) {
     if (isOutOf(board, x, y)) {
         return false;
     }
     return getAt(board, x, y) === element;
 }
+exports.isAt = isAt;
 
 /**
  *
@@ -153,14 +166,15 @@ export function isAt(board, x, y, element) {
  * @param {*} x
  * @param {*} y
  */
-export function getAt(board, x, y) {
+function getAt(board, x, y) {
     if (isOutOf(board, x, y)) {
         return ELEMENT.WALL;
     }
     return getElementByXY(board, { x, y });
 }
+exports.getAt = getAt;
 
-export function isNear(board, x, y, element) {
+function isNear(board, x, y, element) {
     if (isOutOf(board, x, y)) {
         return ELEMENT.WALL;
     }
@@ -170,13 +184,15 @@ export function isNear(board, x, y, element) {
         isAt(board, x, y + 1, element) ||
         isAt(board, x, y - 1, element);
 }
+exports.isNear = isNear;
 
-export function isOutOf(board, x, y) {
+function isOutOf(board, x, y) {
     const boardSize = getBoardSize(board);
     return x >= boardSize || y >= boardSize || x < 0 || y < 0;
 }
+exports.isOutOf = isOutOf;
 
-export function getHeadPosition(board) {
+function getHeadPosition(board) {
     return getFirstPositionOf(board, [
         ELEMENT.HEAD_DOWN,
         ELEMENT.HEAD_LEFT,
@@ -188,8 +204,9 @@ export function getHeadPosition(board) {
         ELEMENT.HEAD_SLEEP,
     ]);
 }
+exports.getHeadPosition = getHeadPosition;
 
-export function getFirstPositionOf(board, elements) {
+function getFirstPositionOf(board, elements) {
     for (var i = 0; i < elements.length; i++) {
         var element = elements[i];
         var position = board.indexOf(element);
@@ -199,8 +216,9 @@ export function getFirstPositionOf(board, elements) {
     }
     return null;
 }
+exports.getFirstPositionOf = getFirstPositionOf;
 
-export function getXYByPosition(board, position) {
+function getXYByPosition(board, position) {
     if (position === -1) {
         return null;
     }
@@ -211,6 +229,7 @@ export function getXYByPosition(board, position) {
         y: (position - (position % size)) / size
     };
 }
+exports.getXYByPosition = getXYByPosition;
 
 /**
  *
@@ -218,21 +237,24 @@ export function getXYByPosition(board, position) {
  * @param {[number, number]} param1
  * @return {[number, number]}
  */
-export function sum([x1, y1], [x2, y2]) {
+function sum([x1, y1], [x2, y2]) {
     return [x1 + x2, y1 + y2];
 }
+exports.sum = sum;
 
 /**
  * @returns {keyof ELEMENT}
  */
-export function getElementByXY(board, position) {
+function getElementByXY(board, position) {
     const size = getBoardSize(board);
     return board[size * position.y + position.x];
 }
+exports.getElementByXY = getElementByXY;
 /**
  * @returns {keyof ELEMENT}
  */
-export function getElementByXYArr(boardArr, position) {
+function getElementByXYArr(boardArr, position) {
     const size = getBoardSize(boardArr);
     return boardArr[size * position.y + position.x];
 }
+exports.getElementByXYArr = getElementByXYArr;
