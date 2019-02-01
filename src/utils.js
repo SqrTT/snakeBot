@@ -112,6 +112,27 @@ export function findElementPos(board, el) {
 }
 
 
+/**
+ * @param {Array<[string]>} board
+ * @param {string} el
+ * @return {Array<[number, number]>}
+ */
+export function findElementsPos(board, el) {
+    const result = [];
+    for (let y in board) {
+        const row = board[y];
+        for (let x in row) {
+            if (el === row[x]) {
+                result.push([Number(x), Number(y)]);
+            }
+        }
+    }
+    return result;
+}
+
+
+
+
 export function isEnemyHead(e) {
     return ENEMY_NORMAL_HEAD.indexOf(e) !== -1;
 }

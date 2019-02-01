@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMIES_HEAD_LIST, PLAYER_HEAD_LIST } from './constants';
+import { ELEMENT, COMMANDS, ENEMIES_HEAD_LIST, PLAYER_HEAD_LIST, COMMANDS_LIST } from './constants';
 import {
     isGameOver, getHeadPosition, getElementByXY, getBoardAsArray, findElementPos
 } from './utils';
@@ -44,9 +44,11 @@ export function getNextSnakeMove(board, logger) {
 
     const raitings = sorround.map(rateElement);
     logger('Raitings:' + JSON.stringify(raitings));
-    console.time('step');
+    console.time('board');
     const state = State.getState(board);
+    console.timeEnd('board');
 
+    console.time('step');
     var q = minimax(4, state);
     console.timeEnd('step');
 
@@ -56,19 +58,6 @@ export function getNextSnakeMove(board, logger) {
 
     return q[0];
 }
-
-
-/**
- *
- * @param {[number, number]} param0
- * @param {[number, number]} param1
- * @return {[number, number]}
- */
-function sum([x1, y1], [x2, y2]) {
-    return [x1 + x2, y1 + y2];
-}
-
-
 
 function getMax([a1, value1], [a2, value2]) {
     return value1 > value2 ? [a1, value1] : [a2, value2];
@@ -85,18 +74,13 @@ function getMin([a1, value1], [a2, value2]) {
 function minimax(depth = 0, board) {
     if (depth < 1) {
         return [COMMANDS.RIGHT, 0, 'END'];
-    } else {
+    } else if (board.player && !board.player.isDead) {
         let maxPlayerVal = ['ACT', -Infinity];
-        const playerPos = findElementPos(board, ELEMENT.HEAD_UP);
-        if (!playerPos) {
-            return [COMMANDS.RIGHT, 0, 'sleep?'];
-        }
         let minEnemyVal = ['ACT', +Infinity];
-        const enemiesPos = findElementsPos(board, ELEMENT.ENEMY_HEAD_UP, 5);
 
         for (let playerAction of COMMANDS_LIST) {
-            for (let enemyPos of enemiesPos) {
-                for (let action of COMMANDS_LIST) {
+            for (let enemy of board.enemies) {
+                for (let enemyAction of COMMANDS_LIST) {
 
                     emulateStep(board, playerAction, playerPos);
                     // [left, left, left]
@@ -114,7 +98,6 @@ function minimax(depth = 0, board) {
                 }
             }
 
-
             const val = evaluatePlayer(board, playerPos, nextPos);
             if (val >= -10) {
 
@@ -125,6 +108,8 @@ function minimax(depth = 0, board) {
             }
         }
         return maxPlayerVal;
+    } else {
+        return [COMMANDS.RIGHT, 0, 'NO Player'];
     }
 }
 

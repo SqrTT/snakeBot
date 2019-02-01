@@ -1,5 +1,5 @@
-import { ELEMENT, COMMANDS, PLAYER_HEAD_LIST } from "./constants";
-import { getBoardAsArray, findElementPos } from "./utils";
+import { ELEMENT, COMMANDS, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } from "./constants";
+import { getBoardAsArray, findElementPos, sum, findElementsPos } from "./utils";
 
 
 const EVALUATION_MAP = {
@@ -191,6 +191,9 @@ class Snake {
         this.isFury = 0;
         this.isFly = 0;
         this.isDead = false;
+        /**
+         * @type {Element}
+         */
         this.head = null;
         this.elements = [];
     }
@@ -208,7 +211,7 @@ export class State {
          */
         this.enemies = [];
         /**
-         * @type Snake[]
+         * @type Element[]
          */
         this.snakesElements = [];
     }
@@ -217,7 +220,7 @@ export class State {
         const state = new State();
 
 
-        // player head
+        // player
         PLAYER_HEAD_LIST.some(headType => {
             const pos = findElementPos(boardMatrix, headType);
             if (pos) {
@@ -225,7 +228,7 @@ export class State {
                 state.player.head = new Element(pos[0], pos[1], headType, state.player);
                 state.player.elements.push(state.player.head);
                 state.snakesElements.push(state.player.head);
-                setValAt(boardMatrix, pos, ELEMENT.SOME_SNAKE);
+                setValAtMut(boardMatrix, pos, ELEMENT.NONE);
 
                 if (headType === ELEMENT.HEAD_FLY) {
                     state.player.isFly = 1;
@@ -234,17 +237,99 @@ export class State {
                 } else if (headType === ELEMENT.HEAD_SLEEP || headType === ELEMENT.HEAD_DEAD) {
                     state.player.isDead = true;
                 }
+                // find snake body
+                let isEnd = 100;
+                let currentPos = pos;
+                do {
+                    isEnd--;
+                    for (let direction of DIRECTIONS_RAW) {
+                        const next = sum(currentPos, direction);
+                        const elAtPos = getValAt(boardMatrix, next)
+                        if (PLAYER_BODY.indexOf(elAtPos) > -1) {
+                            currentPos = next;
+                            const newEl = new Element(currentPos[0], currentPos[1], elAtPos, state.player);
+                            state.player.elements.push(newEl);
+                            state.snakesElements.push(state.player.head);
 
+                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
 
+                            // bodyPart
+                        } else if (PLAYER_TAIL.indexOf(elAtPos) > -1) {
+                            currentPos = next;
+                            isEnd = 0;
+                            // tail
+                            currentPos = next;
+                            const newEl = new Element(currentPos[0], currentPos[1], elAtPos, state.player);
+                            state.player.elements.push(newEl);
+                            state.snakesElements.push(state.player.head);
+
+                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
+                            break;
+                        }
+                    }
+
+                } while (isEnd > 0);
 
                 return true;
             }
         });
 
+        // enemies
+        ENEMIES_HEAD_LIST.forEach(headType => {
+            const enemiesPos = findElementsPos(boardMatrix, headType);
 
+            for (let enemyPos of enemiesPos) {
+                const snake = new Snake();
+                state.enemies.push(snake)
+                snake.head = new Element(enemyPos[0], enemyPos[1], headType, snake);
+                snake.elements.push(snake.head);
+                state.snakesElements.push(snake.head);
+                setValAtMut(boardMatrix, enemyPos, ELEMENT.NONE);
 
+                if (headType === ELEMENT.HEAD_FLY) {
+                    snake.isFly = 1;
+                } else if (headType === ELEMENT.HEAD_EVIL) {
+                    snake.isFury = 1;
+                } else if (headType === ELEMENT.HEAD_SLEEP || headType === ELEMENT.HEAD_DEAD) {
+                    snake.isDead = true;
+                }
+                // find snake body
+                let isEnd = 100;
+                let currentPos = enemyPos;
+                do {
+                    isEnd--;
+                    for (let direction of DIRECTIONS_RAW) {
+                        const next = sum(currentPos, direction);
+                        const elAtPos = getValAt(boardMatrix, next)
+                        if (ENEMY_BODY.indexOf(elAtPos) > -1) {
+                            currentPos = next;
+                            const newEl = new Element(currentPos[0], currentPos[1], elAtPos, snake);
+                            snake.elements.push(newEl);
+                            state.snakesElements.push(newEl);
+                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
 
-        this.boardMatrix = boardMatrix;
+                            // bodyPart
+                        } else if (ENEMY_TAIL.indexOf(elAtPos) > -1) {
+                            currentPos = next;
+                            isEnd = 0;
+                            // tail
+                            currentPos = next;
+                            const newEl = new Element(currentPos[0], currentPos[1], elAtPos, snake);
+                            snake.elements.push(newEl);
+                            state.snakesElements.push(newEl);
+
+                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
+                            break;
+                        }
+                    }
+
+                } while (isEnd > 0);
+            }
+        });
+
+        //debugger;
+        state.boardMatrix = boardMatrix;
+        return state;
 
     }
 }
