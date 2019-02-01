@@ -30,6 +30,10 @@ export function getBoardAsString(board) {
     return getBoardAsArray(board).join("\n");
 }
 
+/**
+ *
+ * @param {string} board
+ */
 export function getBoardAsArray(board) {
     const size = getBoardSize(board);
     var result = [];
@@ -88,6 +92,25 @@ export function sumPositions([x1, y1], [x2, y2]) {
 export function multPositions([x1, y1], x) {
     return [x1 * x, y1 * x];
 }
+
+/**
+ *
+ * @param {Array<[string]>} board
+ * @param {string} el
+ * @return {[number, number]}
+ */
+export function findElementPos(board, el) {
+    for (let y in board) {
+        const row = board[y];
+        for (let x in row) {
+            if (el === row[x]) {
+                return [Number(x), Number(y)];
+            }
+        }
+    }
+    return;
+}
+
 
 export function isEnemyHead(e) {
     return ENEMY_NORMAL_HEAD.indexOf(e) !== -1;
@@ -166,6 +189,16 @@ export function getXYByPosition(board, position) {
         x: position % size,
         y: (position - (position % size)) / size
     };
+}
+
+/**
+ *
+ * @param {[number, number]} param0
+ * @param {[number, number]} param1
+ * @return {[number, number]}
+ */
+export function sum([x1, y1], [x2, y2]) {
+    return [x1 + x2, y1 + y2];
 }
 
 /**

@@ -19,358 +19,176 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { ELEMENT, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS, ENEMY_HEAD, ENEMY_HEAD_TO_DIRECTION, DIRECTION } from './constants';
+import { ELEMENT, COMMANDS, ENEMIES_HEAD_LIST, PLAYER_HEAD_LIST } from './constants';
 import {
-    isGameOver, getHeadPosition, getBoardSize, getAt, getBoardAsArray, isSleep, isEnemyHead, multPositions, sumPositions, isEnemyBody
+    isGameOver, getHeadPosition, getElementByXY, getBoardAsArray, findElementPos
 } from './utils';
-import PF from 'pathfinding';
-const EATING_STONE_SIZE = 6;
-let turnsCount = 0;
-let stayOnTheWayCount = 0;
-let evilCount = 0;
-let flyCount = 0;
+import { State } from './simulator';
 
+
+// Bot Example
 export function getNextSnakeMove(board, logger) {
-    console.time('move');
-    const res = getNextSnakeMoveInner(board, logger);
-    console.timeEnd('move');
-    return res;
-}
-/**
- *
- * @param {string} board
- * @param {(asg: any)=> void} logger
- */
-function getNextSnakeMoveInner(board, logger) {
     if (isGameOver(board)) {
         return '';
-    }
-    if (isSleep(board)) {
-        turnsCount = 0;
-    } else {
-        turnsCount++;
-    }
-
-    if (evilCount > 0) {
-        evilCount--;
-    }
-    if (flyCount > 0) {
-        flyCount--;
     }
     const headPosition = getHeadPosition(board);
     if (!headPosition) {
         return '';
     }
+    logger('Head:' + JSON.stringify(headPosition));
 
-    logger(`turn: ${turnsCount} x:${headPosition.x} y: ${headPosition.y} evil: ${evilCount} fly: ${flyCount}`);
-    var selfSize = 0;
-    var enemiesSize = 0;
-    var enemiesCount = 0;
-    board.split('').forEach(x => {
-        if (isSelf(x)) {
-            selfSize += 1;
-        } else if (isEnemy(x)) {
-            enemiesSize++;
-            if (ENEMY_HEAD.indexOf(x) > -1) {
-                enemiesCount++;
-            }
-        }
-    });
-    var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
-    logger(`Size: ${selfSize}`);
-    logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
+    const sorround = getSorround(board, headPosition); // (LEFT, UP, RIGHT, DOWN)
+    logger('Sorround: ' + JSON.stringify(sorround));
 
-    var mode = 'normal';
-    if (flyCount > 1 && getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_FLY) {
-        mode = 'fly';
-    } else if (evilCount > 1 && getAt(board, headPosition.x, headPosition.y) === ELEMENT.HEAD_EVIL) {
-        mode = 'evil';
-    }
-    const scareEnemyes = mode !== 'evil' || selfSize >= enemiesSize + 2;
-    const directions = getDirections(board, headPosition, selfSize, rateElement, false, scareEnemyes, mode);
-    logger('Food amount: ' + JSON.stringify(directions.length));
 
-    var el;
-    var ACT = mode === 'evil' ? 'ACT,' : '';
 
-    /// attack
-    // attack enemy head (evil)
-    if (mode === 'evil' && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
-        logger('attack enemy head (evil): ' + el.distance);
-        return ACT + el.command;
-    }
+    const raitings = sorround.map(rateElement);
+    logger('Raitings:' + JSON.stringify(raitings));
+    console.time('step');
+    const state = State.getState(board);
 
-    // attack enemy head (normal)
-    if (selfSize - 2 > enemiesSize && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
-        logger('attack enemy head (normal): ' + el.distance);
-        return ACT + el.command;
-    }
-    // cut body
-    if (mode === 'evil' && (el = directions.find(x => (isEnemyBody(x.element) || isEnemyHead(x.element)) && x.distance < evilCount + 1))) {
-        logger('attack enemy body:' + el.distance);
-        console.log('attack enemy body/head: ' + el.distance);
+    var q = minimax(4, state);
+    console.timeEnd('step');
 
-        return ACT + el.command;
-    }
-    // stay on the way
-    if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 2 && isEnemyHead(x.element) && x.distance < 2))) {
-        logger('stay on the way 2: ' + el.distance);
-        console.log('stay on the way 2: ' + el.distance);
+    console.log(q);
 
-        stayOnTheWayCount++;
-        return ACT + el.command;
-    } else if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 3 && isEnemyHead(x.element) && x.distance < 3))) {
-        logger('stay on the way 3: ' + el.distance);
-        console.log('stay on the way 3: ' + el.distance);
+    const command = getCommandByRaitings(raitings);
 
-        stayOnTheWayCount++;
-        return ACT + el.command;
+    return q[0];
+}
+
+
+/**
+ *
+ * @param {[number, number]} param0
+ * @param {[number, number]} param1
+ * @return {[number, number]}
+ */
+function sum([x1, y1], [x2, y2]) {
+    return [x1 + x2, y1 + y2];
+}
+
+
+
+function getMax([a1, value1], [a2, value2]) {
+    return value1 > value2 ? [a1, value1] : [a2, value2];
+}
+function getMin([a1, value1], [a2, value2]) {
+    return value1 < value2 ? [a1, value1] : [a2, value2];
+}
+
+/**
+ *
+ * @param {number} depth
+ * @param {State} board
+ */
+function minimax(depth = 0, board) {
+    if (depth < 1) {
+        return [COMMANDS.RIGHT, 0, 'END'];
     } else {
-        stayOnTheWayCount = 0;
-    }
-    ///
+        let maxPlayerVal = ['ACT', -Infinity];
+        const playerPos = findElementPos(board, ELEMENT.HEAD_UP);
+        if (!playerPos) {
+            return [COMMANDS.RIGHT, 0, 'sleep?'];
+        }
+        let minEnemyVal = ['ACT', +Infinity];
+        const enemiesPos = findElementsPos(board, ELEMENT.ENEMY_HEAD_UP, 5);
 
-    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < evilCount + 1))) {
-        logger('fury stone: ' + el.distance);
-        return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance === 1))) {
-        logger('extra short apple: ' + el.distance);
-        return ACT + el.command;
-    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 3))) {
-        logger('short self cut stone: ' + el.distance);
-        return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 15))) {
-        logger('short fury: ' + el.distance);
-        if (el.distance === 1) {
-            evilCount = 10;
-        }
-        return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
-        logger('short gold: ' + el.distance);
-        return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 10))) {
-        logger('short apple: ' + el.distance);
-        return ACT + el.command;
-    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
-        logger('self cut stone: ' + el.distance);
-        return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.FLYING_PILL && x.distance < 3))) {
-        logger('short fly: ' + el.distance);
-        if (el.distance === 1) {
-            flyCount = 10;
-        }
-        return ACT + el.command;
-    } else {
-        logger('many food dir');
-        var foodDir = {
-            [COMMANDS.LEFT]: 0,
-            [COMMANDS.RIGHT]: 0,
-            [COMMANDS.DOWN]: 0,
-            [COMMANDS.UP]: 0
-        }
+        for (let playerAction of COMMANDS_LIST) {
+            for (let enemyPos of enemiesPos) {
+                for (let action of COMMANDS_LIST) {
 
-        directions.forEach(x => {
-            if (x.element === ELEMENT.GOLD) {
-                foodDir[x.command] += 6 / (x.distance * x.distance);
-            } else if (x.element === ELEMENT.APPLE) {
-                foodDir[x.command] += 2 / (x.distance * x.distance);
-            } else if (x.element === ELEMENT.FURY_PILL) {
-                foodDir[x.command] += 2 / (x.distance * x.distance);
-            } else if (isEnemyHead(x.element)) {
-                foodDir[x.command] += 3 / (x.distance * x.distance);
+                    emulateStep(board, playerAction, playerPos);
+                    // [left, left, left]
+                    // const nextPos = sum(enemyPos, DIRECTIONS_MAP[action]);
+
+                    // const val = evaluateEnemy(board, enemyPos, nextPos);
+                    // if (val < 10) {
+
+
+                    //     var max = minimax(depth - 1, movedCleanBoard);
+                    //     minEnemyVal = getMin(max, [action, val]);
+                    // } else {
+                    //     minEnemyVal = getMin(minEnemyVal, [action, val]);
+                    // }
+                }
             }
-        });
-        logger(JSON.stringify(foodDir));
 
-        var nextCommand = 'ACT';
-        var nextWheight = 0;
 
-        Object.keys(foodDir).forEach(cmnd => {
-            if (nextWheight < foodDir[cmnd]) {
-                nextWheight = foodDir[cmnd];
-                nextCommand = cmnd;
+            const val = evaluatePlayer(board, playerPos, nextPos);
+            if (val >= -10) {
+
+                // const min = minimax(depth - 1, movedCleanBoard, steps);
+                maxPlayerVal = getMax(min, [playerAction, val]);
+            } else {
+                maxPlayerVal = getMax(maxPlayerVal, [playerAction, val]);
             }
-        })
-        return ACT + nextCommand;
+        }
+        return maxPlayerVal;
     }
 }
 
 
-function getDirections(board, headPosition, selfSize, rateElement, findFloor = false, countOnEnemyHeads = true, mode = 'normal', skipAhead = true) {
-    const directions = [];
-    const boardSize = getBoardSize(board);
 
-    for (let x = 0; x < boardSize; x++) {
-        for (let y = 0; y < boardSize; y++) {
-
-            var element = getAt(board, x, y);
-
-            if (rateElement(element, mode) > 0) {
-                const filteredBoard = board.split('').map(x => {
-                    if (mode === 'normal' && isEnemy(x)) {
-                        return 1;
-                    } else if (
-                        x === ELEMENT.WALL ||
-                        (x === ELEMENT.START_FLOOR && !findFloor) ||
-                        x === ELEMENT.ENEMY_TAIL_INACTIVE ||
-                        x === ELEMENT.ENEMY_HEAD_DEAD ||
-                        x === ELEMENT.ENEMY_HEAD_SLEEP
-                    ) {
-                        return 1;
-                    } else if (x === ELEMENT.STONE && mode === 'normal' && selfSize < EATING_STONE_SIZE + 1) {
-                        return 1;
-                    } else if (isSelf(x)) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                }).join('');
-
-                const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
-
-                if (element === ELEMENT.ENEMY_HEAD_EVIL || (countOnEnemyHeads && isEnemyHead(element))) {
-                    boardClone[y + 1][x] = 1;
-                    boardClone[y - 1][x] = 1;
-                    boardClone[y][x + 1] = 1;
-                    boardClone[y][x - 1] = 1;
-                    //console.log('count');
-                }
-
-                if (!findFloor && !skipAhead && isEnemyHead(element)) {
-                    const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
-                    [1, 2, 3].forEach(ahead => {
-                        const currentHeadPos = multPositions(DIRECTION[headDirection], ahead);
-                        const [nextMoveX, nextMoveY] = sumPositions([x, y], currentHeadPos);
-
-                        if (boardClone[nextMoveY] && boardClone[nextMoveY][nextMoveX] === 0) {
-                            var headPath = getPaths(boardClone, headPosition, nextMoveX, nextMoveY);
-
-                            if (headPath && headPath.length > 1 && !isDeadEnd(board, x, y, headPath)) {
-
-                                //headPath.shift();
-                                const [nextX, nextY] = headPath[1];
-
-
-                                directions.push({
-                                    element: element,
-                                    ahead: ahead,
-                                    distance: headPath.length - 1,
-                                    command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                                });
-                            }
-                        }
-                    });
-                }
-                const path = getPaths(boardClone, headPosition, x, y);
-                if (path && path.length > 1) {
-                    // logger(`path length: ${path.length}`);
-                    //path.shift();
-                    const [nextX, nextY] = path[1];
-
-                    if (findFloor || !isDeadEnd(board, x, y, path)) {
-                        if (element === ELEMENT.FURY_PILL && path.length >= 7) {
-                            const stones = getDirections(board, ({ x, y }), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
-
-                            if ((stones && stones.length && stones[0].distance < 8)) {
-                                //console.log('see firy pill');
-                                directions.push({
-                                    element: element,
-                                    distance: path.length - 1,
-                                    command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                                });
-                            }
-                        } else if (!findFloor && (element === ELEMENT.APPLE || element === ELEMENT.GOLD || element === ELEMENT.FURY_PILL)) {
-                            const enemies = getDirections(board, ({ x, y }), +Infinity, (el) => !el.ahead && ENEMY_HEAD.includes(el) ? 1 : -1, false, false, 'evil', true);
-
-                            if (!enemies || !enemies.length || enemies[0].distance > 2) {
-                                directions.push({
-                                    element: element,
-                                    distance: path.length - 1,
-                                    command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                                });
-                            }
-                        } else {
-                            directions.push({
-                                element: element,
-                                distance: path.length - 1,
-                                command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                            });
-                        }
-                    }
-
-                    if (findFloor && directions.length) {
-                        return directions;
-                    }
+/**
+ * @param {Array<[string]>} board
+ * @param {string} el
+ * @return {Array<[number, number]>}
+ */
+function findElementsPos(board, el, limit = Infinity) {
+    const result = [];
+    for (let y in board) {
+        const row = board[y];
+        for (let x in row) {
+            if (el === row[x]) {
+                result.push([Number(x), Number(y)]);
+                if (result.length >= limit) {
+                    return result;
                 }
             }
         }
     }
-    directions.sort((a, b) => a.distance - b.distance);
-
-    return directions;
-}
-
-function getPaths(boardClone, headPosition, x, y) {
-    const grid = new PF.Grid(boardClone);
-    const finder = new PF.AStarFinder();
-    var path = finder.findPath(headPosition.x, headPosition.y, x, y, grid);
-    return path;
-}
-
-function isDeadEnd(board, x, y, path) {
-    const arrayBoard = getBoardAsArray(board).map(x => x.split(''));
-    path.forEach(([x, y]) => {
-        arrayBoard[y][x] = ELEMENT.WALL;
-    });
-    arrayBoard[y][x] = 'X';
-    const strBoard = arrayBoard.map(x => x.join('')).join('');
-
-    var dir = getDirections(strBoard, { x, y }, +Infinity, (e) => e === ELEMENT.START_FLOOR, true)
-
-    return dir.length === 0;
-}
-function getCoomandByCoord(x, y, x2, y2) {
-    if (x < x2) {
-        return COMMANDS.RIGHT;
-    } else if (x > x2) {
-        return COMMANDS.LEFT;
-    } else if (y > y2) {
-        return COMMANDS.UP;
-    } else {
-        return COMMANDS.DOWN;
-    }
+    return result;
 }
 
 
-function isEnemy(element) {
-    return ENEMY_ELEMENTS.indexOf(element) > -1;
-}
 
-function isSelf(element) {
-    return SELF_ELEMENTS.indexOf(element) > -1;
+function getSorround(board, position) {
+    const p = position;
+    return [
+        getElementByXY(board, { x: p.x - 1, y: p.y }), // LEFT
+        getElementByXY(board, { x: p.x, y: p.y - 1 }), // UP
+        getElementByXY(board, { x: p.x + 1, y: p.y }), // RIGHT
+        getElementByXY(board, { x: p.x, y: p.y + 1 }) // DOWN
+    ];
 }
 
 function rateElement(element) {
     if (element === ELEMENT.NONE) {
         return 0;
-    } else if (element === ELEMENT.APPLE) {
-        return 20;
-    } else if (element === ELEMENT.WALL) {
-        return -11;
-    } else if (element === ELEMENT.GOLD) {
-        return 25;
-    } else if (
-        element === ELEMENT.FURY_PILL ||
-        element === ELEMENT.FLYING_PILL
+    }
+    if (
+        element === ELEMENT.APPLE ||
+        element === ELEMENT.GOLD
     ) {
-        return 2;
-    } else if (isEnemy(element)) {
-        return 2;
-    } else if (element === ELEMENT.STONE) {
-        return 3;
-    } else if (isSelf(element)) {
-        return -5;
+        return 1;
     }
 
-    return -10;
+    return -1;
+}
+
+
+function getCommandByRaitings(raitings) {
+    var indexToCommand = ['LEFT', 'UP', 'RIGHT', 'DOWN'];
+    var maxIndex = 0;
+    var max = -Infinity;
+    for (var i = 0; i < raitings.length; i++) {
+        var r = raitings[i];
+        if (r > max) {
+            maxIndex = i;
+            max = r;
+        }
+    }
+
+    return indexToCommand[maxIndex];
 }
