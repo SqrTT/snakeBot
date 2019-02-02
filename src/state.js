@@ -216,6 +216,9 @@ class Snake {
         this.furyCount = 0;
         this.flyCount = 0;
         this.isDead = false;
+        /**
+         * @type {string[]}
+         */
         this.nextSteps = [];
         /**
          * @type {Element}
