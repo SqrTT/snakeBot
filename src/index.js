@@ -38,6 +38,13 @@ socket.addEventListener('close', function (event) {
     console.log('Closed');
 });
 
+var forceGC = function () {}
+if (typeof gc ==='function') {
+    forceGC = gc;
+    console.log('Clean gc usage');
+} else {
+    console.log('Clean gc usage is not available');
+}
 socket.addEventListener('message', function (event) {
     var pattern = new RegExp(/^board=(.*)$/);
     ticks++;
@@ -46,6 +53,9 @@ socket.addEventListener('message', function (event) {
     var board = parameters[1];
     var answer = processBoard(board);
     socket.send(answer);
+    setTimeout(function () {
+        forceGC();
+    })
 });
 
 function processBoard(board) {

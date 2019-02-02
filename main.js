@@ -11,6 +11,14 @@ client.on('connectFailed', function (error) {
     console.log('Connect Error: ' + error.toString());
 });
 
+
+var forceGC = function () {}
+if (typeof gc ==='function') {
+    forceGC = gc;
+    console.log('Clean gc usage');
+} else {
+    console.log('Clean gc usage is not available');
+}
 client.on('connect', function (connection) {
     console.log('WebSocket Client Connected');
 
@@ -67,6 +75,9 @@ client.on('connect', function (connection) {
         var board = parameters[1];
         var answer = processBoard(board);
         connection.send(answer);
+        setTimeout(function () {
+            forceGC();
+        })
     });
 
 });

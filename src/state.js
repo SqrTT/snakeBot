@@ -1,6 +1,8 @@
 var { ELEMENT, COMMANDS, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
 var { getBoardAsArray, findElementPos, sum, findElementsPos } = require("./utils");
 
+const X = 0,
+    Y = 1;
 
 var EVALUATION_MAP = {
     NORMAL: {
@@ -145,22 +147,27 @@ function setValAtMut(board, [x, y], value) {
     return board;
 }
 /**
- * @param {[[string]]} board
- * @param {[number, number]} x
+ * @param {[string[]]} board
+ * @param {[number, number]} pos
  * @param {string} value
- * @returns {[[string]]}
+ * @returns {[string[]]}
  */
-function setValAt(board, [x, y], value) {
-    var newArr = Array(board.length);
-    board.forEach((row, by) => {
-        if (y === by) {
-            var newRow = Array(...row);
-            newRow[x] = value;
+function setValAt(board, pos, value) {
+    /**
+     * @type {[string[]]}
+     */
+    var newArr = new Array(board.length);
+
+    for (var y = board.length - 1; y >= 0; y--) {
+        if (y === pos[Y]) {
+            var newRow = new Array(...board[y]);
+            newRow[pos[X]] = value;
             newArr[y] = newRow;
         } else {
-            newArr[by] = row;
+            newArr[y] = board[y];
         }
-    });
+    }
+
     return newArr;
 }
 
@@ -177,15 +184,15 @@ exports.getValAt = getValAt;
 
 
 class Element {
-    constructor([x, y], type, owner) {
+    constructor(pos, type, owner) {
         /**
          * @type {number}
          */
-        this.x = x;
+        this.x = pos[X];
         /**
          * @type {number}
          */
-        this.y = y;
+        this.y = pos[Y];
         /**
          * @type {Snake}
          */
@@ -225,13 +232,11 @@ class Snake {
         var newHead = new Element(nextPos, ELEMENT.HEAD_UP, newSnake);
 
         newSnake.head = newHead;
-        var first = true;
-        for (var oldElement of this.elements) {
-            if (first) {// skip old tail
-                first = false;
-            } else {
-                newSnake.elements.push(new Element(oldElement.getPos(), oldElement.type, newSnake));
-            }
+
+        var elementsLength = this.elements.length;
+        for (var oldElementIdx = 1; oldElementIdx < elementsLength; oldElementIdx++) {
+            var oldElement = this.elements[oldElementIdx];
+            newSnake.elements.push(new Element(oldElement.getPos(), oldElement.type, newSnake));
         }
         newSnake.elements.push(newHead);
 
@@ -244,14 +249,14 @@ class Snake {
         return newSnake;
 
     }
-    isNeck([x, y]) {
+    isNeck(pos) {
         var neck = this.elements[this.elements.length - 2];
 
-        return !neck || neck.x === x && neck.y === y;
+        return !neck || neck.x === pos[X] && neck.y === pos[Y];
     }
-    isSelf([x, y]) {
-        for (var e of this.elements) {
-            if (e.x === x && e.y === y) {
+    isSelf(pos) {
+        for (var idx = this.elements.length - 1; idx >= 0; idx--) {
+            if (this.elements[idx].x === pos[X] && this.elements[idx].y === pos[Y]) {
                 return true;
             }
         }
@@ -304,8 +309,8 @@ class State {
 
 
 
-        ///
-        for (var enemyIDX in this.enemies) {
+
+        for (var enemyIDX = this.enemies.length - 1; enemyIDX >= 0; enemyIDX--) {
             var enemy = this.enemies[enemyIDX];
             var enemyAction = enemiesActions[enemyIDX];
 

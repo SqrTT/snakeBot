@@ -23,8 +23,11 @@ var {
     ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY
 } = require('./constants');
 
+var X = 0;
+var Y = 1;
+
 // Here is utils that might help for bot development
- function getBoardAsString(board) {
+function getBoardAsString(board) {
     var size = getBoardSize(board);
 
     return getBoardAsArray(board).join("\n");
@@ -59,8 +62,8 @@ function getArrayBoardAsArray(srcboard) {
             } if (x === 0) {
                 return '    ';
             } else {
-                return x < 0 ?  ' ' + x.toFixed(0) + ' ' : ' ' + x.toFixed(0) + '  '
-             }
+                return x < 0 ? ' ' + x.toFixed(0) + ' ' : ' ' + x.toFixed(0) + '  '
+            }
         }).join(''));
     }
     return result;
@@ -84,35 +87,35 @@ exports.isSleep = isSleep;
 
 /**
  *
- * @param {[number, number]} param0
- * @param {[number, number]} param1
+ * @param {[number, number]} a1
+ * @param {[number, number]} a2
  */
-function sumPositions([x1, y1], [x2, y2]) {
-    return [x1 + x2, y1 + y2];
+function sumPositions(a1, a2) {
+    return [a1[X] + a2[X], a1[Y] + a2[Y]];
 }
 exports.sumPositions = sumPositions;
 /**
  *
- * @param {[number, number]} param0
+ * @param {[number, number]} a
  * @param {number} x
  */
-function multPositions([x1, y1], x) {
-    return [x1 * x, y1 * x];
+function multPositions(a, x) {
+    return [a[X] * x, a[Y] * x];
 }
 exports.multPositions = multPositions;
 
 /**
  *
- * @param {Array<[string]>} board
+ * @param {Array<string[]>} board
  * @param {string} el
  * @return {[number, number]}
  */
 function findElementPos(board, el) {
-    for (var y in board) {
+    for (var y = board.length - 1; y >= 0; y--) {
         var row = board[y];
-        for (var x in row) {
+        for (var x = row.length - 1; x >= 0; --x) {
             if (el === row[x]) {
-                return [Number(x), Number(y)];
+                return [x, y];
             }
         }
     }
@@ -122,17 +125,19 @@ exports.findElementPos = findElementPos;
 
 
 /**
- * @param {Array<[string]>} board
+ * @param {Array<string[]>} board
  * @param {string} el
- * @return {Array<[number, number]>}
  */
 function findElementsPos(board, el) {
+    /**
+     * @type {Array<[number, number]>}
+     */
     var result = [];
-    for (var y in board) {
+    for (var y = board.length - 1; y >= 0; --y) {
         var row = board[y];
-        for (var x in row) {
+        for (var x = row.length - 1; x >= 0; --x) {
             if (el === row[x]) {
-                result.push([Number(x), Number(y)]);
+                result.push([x, y]);
             }
         }
     }

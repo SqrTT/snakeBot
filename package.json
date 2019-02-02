@@ -13,9 +13,10 @@
     "repository": "https://github.com/codenjoyme/codenjoy/tree/snake-new-ui/CodingDojo/games/snake-battle/src/main/javascript",
     "scripts": {
         "web": "webpack-serve  --config ./webpack.config.js",
-        "start" : "node main.js",
+        "start" : "node --expose-gc main.js",
         "test": "jest",
-        "tdd": "jest --watch"
+        "tdd": "jest --watch",
+        "window" : "chromium  --js-flags=--expose-gc http://localhost:8080/"
     },
     "dependencies": {
         "babel-preset-es2015": "^6.24.1",
