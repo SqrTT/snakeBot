@@ -1,5 +1,5 @@
-var { ELEMENT, COMMANDS, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
-var { getBoardAsArray, findElementPos, sum, findElementsPos } = require("./utils");
+var { ELEMENT, COMMANDS, COMMANDS_LIST, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
+var { getBoardAsArray, findElementPos, sum, findElementsPos, getDirectionByPos, isSamePos } = require("./utils");
 
 const X = 0,
     Y = 1;
@@ -137,13 +137,13 @@ var EVALUATION_MAP = {
 }
 
 /**
- * @param {[[string]]} board
- * @param {[number, number]} x
+ * @param {[string[]]} board
+ * @param {[number, number]} pos
  * @param {string} value
- * @returns {[[string]]}
+ * @returns {[string[]]}
  */
-function setValAtMut(board, [x, y], value) {
-    board[y][x] = value;
+function setValAtMut(board, pos, value) {
+    board[pos[Y]][pos[X]] = value;
     return board;
 }
 /**
@@ -156,7 +156,8 @@ function setValAt(board, pos, value) {
     /**
      * @type {[string[]]}
      */
-    var newArr = new Array(board.length);
+    var newArr = [];
+    newArr.length = board.length;
 
     for (var y = board.length - 1; y >= 0; y--) {
         if (y === pos[Y]) {
@@ -174,11 +175,15 @@ function setValAt(board, pos, value) {
 /**
  *
  * @param {*} board
- * @param {[number, number]} param0
+ * @param {[number, number]} pos
  * @returns {string}
  */
-function getValAt(board, [x, y]) {
-    return (board[y] && board[y][x]) || ELEMENT.OTHER;
+function getValAt(board, pos) {
+    if (pos[X] >= 0 && pos[Y] >= 0 && pos[X] < board.length && pos[Y] < board.length) {
+        return board[pos[Y]][pos[X]];
+    } else {
+        return ELEMENT.OTHER;
+    }
 }
 exports.getValAt = getValAt;
 
@@ -186,13 +191,9 @@ exports.getValAt = getValAt;
 class Element {
     constructor(pos, type, owner) {
         /**
-         * @type {number}
+         * @type {[number, number]}
          */
-        this.x = pos[X];
-        /**
-         * @type {number}
-         */
-        this.y = pos[Y];
+        this.pos = pos;
         /**
          * @type {Snake}
          */
@@ -206,7 +207,7 @@ class Element {
      * @returns {[number, number]}
      */
     getPos() {
-        return [this.x, this.y];
+        return this.pos;
     }
 }
 
@@ -215,20 +216,22 @@ class Snake {
         this.furyCount = 0;
         this.flyCount = 0;
         this.isDead = false;
+        this.nextSteps = [];
         /**
          * @type {Element}
          */
         this.head = undefined;
-
 
         /**
          * @type {Element[]}
          */
         this.elements = [];
     }
-    move(direction) {
+    move(direction, boardMatrix) {
         var nextPos = sum(DIRECTIONS_MAP[direction], this.head.getPos());
         var newSnake = new Snake();
+
+
         var newHead = new Element(nextPos, ELEMENT.HEAD_UP, newSnake);
 
         newSnake.head = newHead;
@@ -246,17 +249,25 @@ class Snake {
         if (this.flyCount > 0) {
             newSnake.flyCount = this.flyCount - 1;
         }
+        for (var dirs = COMMANDS_LIST.length - 1; dirs >= 0; --dirs) {
+            var nextPos = sum(newSnake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
+            var elAtPos = getValAt(boardMatrix, nextPos);
+
+            if (elAtPos !== ELEMENT.WALL && !newSnake.isNeck(nextPos)) {
+                newSnake.nextSteps.push(COMMANDS_LIST[dirs]);
+            }
+        }
         return newSnake;
 
     }
     isNeck(pos) {
         var neck = this.elements[this.elements.length - 2];
 
-        return !neck || neck.x === pos[X] && neck.y === pos[Y];
+        return !neck || neck.pos[X] === pos[X] && neck.pos[Y] === pos[Y];
     }
     isSelf(pos) {
         for (var idx = this.elements.length - 1; idx >= 0; idx--) {
-            if (this.elements[idx].x === pos[X] && this.elements[idx].y === pos[Y]) {
+            if (isSamePos(this.elements[idx].pos, pos)) {
                 return true;
             }
         }
@@ -280,8 +291,10 @@ class State {
         this.snakesElements = [];
     }
     step(playerAction, enemiesActions = []) {
-        var scores = [];
+        var enemiesScores = [];
+        enemiesScores.length = enemiesActions.length;
         var newState = new State();
+        var playerScore;
 
         // player score
         var nextPlayerPos = sum(DIRECTIONS_MAP[playerAction], this.player.head.getPos());
@@ -294,23 +307,27 @@ class State {
         }
         var elAtPos = getValAt(this.boardMatrix, nextPlayerPos);
         if (elAtPos !== ELEMENT.NONE) {
-            scores.push([playerAction, EVALUATION_MAP[mode][elAtPos], elAtPos]);
+            playerScore = [playerAction, EVALUATION_MAP[mode][elAtPos], elAtPos];
         } else {// check other els
-            var body = this.snakesElements.find(snakeEl => snakeEl.x === nextPlayerPos[0] && snakeEl.y === nextPlayerPos[1]);
 
-            if (body) {
-                scores.push([playerAction, EVALUATION_MAP[mode][body.type], body.type]);
-            } else {
-                scores.push([playerAction, EVALUATION_MAP[mode][elAtPos], elAtPos]);
+            for (var snakeElIds = this.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                var snakeEl = this.snakesElements[snakeElIds];
+
+                if (isSamePos(snakeEl.pos, nextPlayerPos)) {
+                    playerScore = [playerAction, EVALUATION_MAP[mode][snakeEl.type], snakeEl.type];
+                    break;
+                }
+            }
+            if (snakeElIds === -1) {
+                playerScore = [playerAction, EVALUATION_MAP[mode][elAtPos], elAtPos];
             }
         }
         /// move player
-        newState.player = this.player.move(playerAction);
+        newState.player = this.player.move(playerAction, this.boardMatrix);
 
-
-
-
-        for (var enemyIDX = this.enemies.length - 1; enemyIDX >= 0; enemyIDX--) {
+        var enemiesLength = this.enemies.length;
+        newState.enemies.length = enemiesLength;
+        for (var enemyIDX = 0; enemyIDX < enemiesLength; enemyIDX++) {
             var enemy = this.enemies[enemyIDX];
             var enemyAction = enemiesActions[enemyIDX];
 
@@ -325,23 +342,28 @@ class State {
             }
             var elAtPos = getValAt(this.boardMatrix, nextEnemyPos);
             if (elAtPos !== ELEMENT.NONE) {
-                scores.push([enemyAction, -EVALUATION_MAP[mode][elAtPos], elAtPos]);
+                enemiesScores[enemyIDX] = [enemyAction, -EVALUATION_MAP[mode][elAtPos], elAtPos];
             } else {// check other els
-                var body = this.snakesElements.find(snakeEl => snakeEl.x === nextEnemyPos[0] && snakeEl.y === nextEnemyPos[1]);
+                for (var snakeElIds = this.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                    var snakeEl = this.snakesElements[snakeElIds];
 
-                if (body) {
-                    scores.push([enemyAction, -EVALUATION_MAP[mode][body.type], body.type]);
-                } else {
-                    scores.push([enemyAction, -EVALUATION_MAP[mode][elAtPos], elAtPos]);
+                    if (isSamePos(snakeEl.pos, nextEnemyPos)) {
+                        enemiesScores[enemyIDX] = [enemyAction, -EVALUATION_MAP[mode][snakeEl.type], snakeEl.type];
+                        break;
+                    }
+                }
+                if (snakeElIds === -1) {
+                    enemiesScores[enemyIDX] = [enemyAction, -EVALUATION_MAP[mode][elAtPos], elAtPos];
                 }
             }
-            newState.enemies.push(enemy.move(enemyAction));
+            newState.enemies[enemyIDX] = enemy.move(enemyAction, this.boardMatrix);
         }
 
         newState.boardMatrix = this.boardMatrix;
 
         return {
-            scores,
+            playerScore,
+            enemiesScores,
             state: newState
         };
     }
@@ -387,8 +409,6 @@ class State {
                             snake.elements.push(newEl);
                             state.snakesElements.push(newEl);
 
-                            setValAtMut(boardMatrix, pos, ELEMENT.NONE);
-
                             if (elAtPos === ELEMENT.HEAD_FLY) {
                                 snake.flyCount = 1;
                             } else if (elAtPos === ELEMENT.HEAD_EVIL) {
@@ -403,6 +423,14 @@ class State {
 
                 } while (isEnd > 0);
                 snake.head = snake.elements[snake.elements.length - 1];
+                for (var dirs = COMMANDS_LIST.length - 1; dirs >= 0; --dirs) {
+                    var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
+                    var elAtPos = getValAt(boardMatrix, nextPos);
+
+                    if (elAtPos !== ELEMENT.WALL && !snake.isNeck(nextPos)) {
+                        snake.nextSteps.push(COMMANDS_LIST[dirs]);
+                    }
+                }
 
                 return true;
             }
@@ -459,14 +487,20 @@ class State {
 
                 } while (isEnd > 0);
                 snake.head = snake.elements[snake.elements.length - 1];
+                for (var dirs = COMMANDS_LIST.length - 1; dirs >= 0; --dirs) {
+                    var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
+                    var elAtPos = getValAt(boardMatrix, nextPos);
 
+                    if (elAtPos !== ELEMENT.WALL && !snake.isNeck(nextPos)) {
+                        snake.nextSteps.push(COMMANDS_LIST[dirs]);
+                    }
+                }
             }
         });
 
         //debugger;
         state.boardMatrix = boardMatrix;
         return state;
-
     }
 }
 exports.State = State;

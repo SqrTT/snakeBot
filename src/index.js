@@ -115,7 +115,11 @@ function printLog(text) {
     if (addToEnd.checked) {
         textarea.value = textarea.value + "\n" + text;
     } else {
-        textarea.value = text + "\n" + textarea.value;
+        var content = text + "\n" + textarea.value;
+        if (content.length > 100000) {
+            content = content.substr(0, 100000);
+        }
+        textarea.value = content;
     }
 }
 

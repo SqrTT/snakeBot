@@ -84,6 +84,29 @@ describe("bot", () => {
             expect(move).toEqual(COMMANDS.RIGHT);
         });
 
+        it("should see 2 step ahead  RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ► ○☼' +
+                '☼ ╘  ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+        it("should see 3 step ahead  RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼►  ○☼' +
+                '☼╘   ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
         it("should try to catch apples LEFT", () => {
             const board =
                 '☼☼☼☼☼☼' +

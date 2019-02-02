@@ -28,13 +28,12 @@ function getNextSnakeMove(board, logger) {
 
     var timeStep = Date.now();
     minimaxCounter = 0;
-    var q = minimax(6, state, arrBoard.length);
+    var q = minimax(5, state, arrBoard.length);
     var timeStepEnd = Date.now();
 
     logger(`next: ${q[SCORE]} ${q[COMMENT]}`);
     logger(`time: board: ${timeBoardEnd - timeBoard}, step: ${timeStepEnd - timeStep}`);
-    logger(`calls ${minimaxCounter}  (${(minimaxCounter/(timeStepEnd - timeStep)).toFixed()} call/ms)`);
-
+    logger(`calls ${minimaxCounter}  (${(minimaxCounter / (timeStepEnd - timeStep)).toFixed()} call/ms)`);
 
     return q[ANSWER];
 }
@@ -63,43 +62,35 @@ function minimax(depth = 0, state, boardSize = 30) {
          */
         var maxPlayerVal = [COMMANDS.ACT, -Infinity, 'MAX'];
 
-        for (var playerActionIDX = COMMANDS_LIST_LENGTH; playerActionIDX >= 0; --playerActionIDX) {
-            var playerAction = COMMANDS_LIST[playerActionIDX];
+        for (var playerActionIDX = state.player.nextSteps.length - 1; playerActionIDX >= 0; --playerActionIDX) {
+            var playerAction = state.player.nextSteps[playerActionIDX];
             var minEnemyVal = [COMMANDS.ACT, +Infinity];
-            var nextPos = sum(state.player.head.getPos(), DIRECTIONS_MAP[playerAction]);
 
-            // short circuit for walls and for out of range
-            if (nextPos[X] < 0 || nextPos[Y] < 0 || nextPos[X] > boardSize - 1 || nextPos[Y] > boardSize - 1) {
-                maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'OUTOFRANGE']);
-            } else if (state.boardMatrix[nextPos[Y]][nextPos[X]] === ELEMENT.WALL) {
-                maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'WALL']);
-            } else if (state.player.isNeck(nextPos)) {
-                maxPlayerVal = getMax(maxPlayerVal, [playerAction, -100, 'NECK']);
-            } else {
-                //for (var enemy of board.enemies) {
-                for (var enemyActionIdx = COMMANDS_LIST_LENGTH; enemyActionIdx >= 0; --enemyActionIdx) {
-                    var enemyAction = COMMANDS_LIST[enemyActionIdx];
-                    // all enemies walk in same side (for speed up)
-                    var emulatedStep = state.step(playerAction, state.enemies.map(() => enemyAction));
-                    var playerScore = emulatedStep.scores.shift();
-                    playerScore[ANSWER] = playerAction;
-                    //playerScore[1] =  playerScore[1] / 1.5;
-                    maxPlayerVal = getMax(maxPlayerVal, playerScore);
+            //for (var enemy of board.enemies) {
+            for (var enemyActionIdx = COMMANDS_LIST_LENGTH; enemyActionIdx >= 0; --enemyActionIdx) {
+                var enemyAction = COMMANDS_LIST[enemyActionIdx];
+                // all enemies walk in same side (for speed up)
+                var emulatedStep = state.step(playerAction, state.enemies.map(() => enemyAction));
+                var playerScore = emulatedStep.playerScore;
+                playerScore[ANSWER] = playerAction;
 
-                    for (var scoreIdx = emulatedStep.scores.length - 1; scoreIdx >= 0; --scoreIdx) {
-                        var score = emulatedStep.scores[scoreIdx];
-                        score[0] = playerAction;
-                        minEnemyVal = getMin(minEnemyVal, score);
-                    }
-                    var value = minimax(depth - 1, emulatedStep.state, boardSize);
-                    value[ANSWER] = playerAction;
-                    value[SCORE] = value[SCORE] / 1.1;
-
-                    minEnemyVal = getMin(minEnemyVal, value);
+                //playerScore[1] =  playerScore[1] / 1.5;
+                maxPlayerVal = getMax(maxPlayerVal, playerScore);
+                var emulatesLength = emulatedStep.enemiesScores.length;
+                for (var scoreIdx = 0; emulatesLength < scoreIdx; scoreIdx++) {
+                    var score = emulatedStep.enemiesScores[scoreIdx];
+                    score[0] = playerAction;
+                    minEnemyVal = getMin(minEnemyVal, score);
                 }
-                //}
-                maxPlayerVal = getMax(maxPlayerVal, minEnemyVal);
+                var value = minimax(depth - 1, emulatedStep.state, boardSize);
+                value[ANSWER] = playerAction;
+                value[SCORE] = value[SCORE] / 1.1;
+
+                minEnemyVal = getMin(minEnemyVal, value);
             }
+            //}
+            maxPlayerVal = getMax(maxPlayerVal, minEnemyVal);
+
         }
         return maxPlayerVal;
     } else {

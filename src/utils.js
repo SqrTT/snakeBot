@@ -20,7 +20,7 @@
  * #L%
  */
 var {
-    ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY
+    ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY, COMMANDS
 } = require('./constants');
 
 var X = 0;
@@ -46,29 +46,7 @@ function getBoardAsArray(board) {
     return result;
 }
 exports.getBoardAsArray = getBoardAsArray;
-/**
- *
- * @param {[*]} srcboard
- */
-function getArrayBoardAsArray(srcboard) {
-    var size = getBoardSize(srcboard);
-    var result = [];
-    var board = Array.from(srcboard);
-    for (var i = 0; i < size; i++) {
-        var line = board.slice(i * size, i * size + size);
-        result.push(line.map(x => {
-            if (x === 'S') {
-                return 'HHHH';
-            } if (x === 0) {
-                return '    ';
-            } else {
-                return x < 0 ? ' ' + x.toFixed(0) + ' ' : ' ' + x.toFixed(0) + '  '
-            }
-        }).join(''));
-    }
-    return result;
-}
-exports.getArrayBoardAsArray = getArrayBoardAsArray;
+
 
 function getBoardSize(board) {
     return Math.sqrt(board.length);
@@ -144,6 +122,25 @@ function findElementsPos(board, el) {
     return result;
 }
 exports.findElementsPos = findElementsPos;
+
+function getDirectionByPos(from, to) {
+    if (from[X] < to[X]) {
+        return COMMANDS.RIGHT;
+    } else if (from[X] < to[X]) {
+        return COMMANDS.LEFT;
+    } else if (from[Y] < to[Y]) {
+        return COMMANDS.UP;
+    } else {
+        return COMMANDS.DOWN;
+    }
+}
+exports.getDirectionByPos = getDirectionByPos;
+
+function isSamePos(from, to) {
+    return from[X] === to[X] && from[Y] === to[Y];
+}
+exports.isSamePos = isSamePos;
+
 
 
 
@@ -238,12 +235,12 @@ exports.getXYByPosition = getXYByPosition;
 
 /**
  *
- * @param {[number, number]} param0
- * @param {[number, number]} param1
+ * @param {[number, number]} a1
+ * @param {[number, number]} a2
  * @return {[number, number]}
  */
-function sum([x1, y1], [x2, y2]) {
-    return [x1 + x2, y1 + y2];
+function sum(a1, a2) {
+    return [a1[X] + a2[X], a1[Y] + a2[Y]];;
 }
 exports.sum = sum;
 

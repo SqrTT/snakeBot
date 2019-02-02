@@ -139,12 +139,16 @@ const ENEMIES_HEAD_LIST = [
 ];
 exports.ENEMIES_HEAD_LIST = ENEMIES_HEAD_LIST;
 
+
 const DIRECTIONS_MAP = {
     [COMMANDS.DOWN]: [0, +1],
     [COMMANDS.LEFT]: [-1, 0],
     [COMMANDS.RIGHT]: [+1, 0],
     [COMMANDS.UP]: [0, -1]
 }
+/**
+ * @type { ({string : [number, number]})}
+ */
 exports.DIRECTIONS_MAP = DIRECTIONS_MAP;
 
 const DIRECTIONS_RAW = [
