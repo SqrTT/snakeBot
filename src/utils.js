@@ -19,13 +19,13 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-const {
+var {
     ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY
 } = require('./constants');
 
 // Here is utils that might help for bot development
  function getBoardAsString(board) {
-    const size = getBoardSize(board);
+    var size = getBoardSize(board);
 
     return getBoardAsArray(board).join("\n");
 }
@@ -35,7 +35,7 @@ exports.getBoardAsString = getBoardAsString;
  * @param {string} board
  */
 function getBoardAsArray(board) {
-    const size = getBoardSize(board);
+    var size = getBoardSize(board);
     var result = [];
     for (var i = 0; i < size; i++) {
         result.push(board.substring(i * size, (i + 1) * size));
@@ -48,7 +48,7 @@ exports.getBoardAsArray = getBoardAsArray;
  * @param {[*]} srcboard
  */
 function getArrayBoardAsArray(srcboard) {
-    const size = getBoardSize(srcboard);
+    var size = getBoardSize(srcboard);
     var result = [];
     var board = Array.from(srcboard);
     for (var i = 0; i < size; i++) {
@@ -108,9 +108,9 @@ exports.multPositions = multPositions;
  * @return {[number, number]}
  */
 function findElementPos(board, el) {
-    for (let y in board) {
-        const row = board[y];
-        for (let x in row) {
+    for (var y in board) {
+        var row = board[y];
+        for (var x in row) {
             if (el === row[x]) {
                 return [Number(x), Number(y)];
             }
@@ -127,10 +127,10 @@ exports.findElementPos = findElementPos;
  * @return {Array<[number, number]>}
  */
 function findElementsPos(board, el) {
-    const result = [];
-    for (let y in board) {
-        const row = board[y];
-        for (let x in row) {
+    var result = [];
+    for (var y in board) {
+        var row = board[y];
+        for (var x in row) {
             if (el === row[x]) {
                 result.push([Number(x), Number(y)]);
             }
@@ -187,7 +187,7 @@ function isNear(board, x, y, element) {
 exports.isNear = isNear;
 
 function isOutOf(board, x, y) {
-    const boardSize = getBoardSize(board);
+    var boardSize = getBoardSize(board);
     return x >= boardSize || y >= boardSize || x < 0 || y < 0;
 }
 exports.isOutOf = isOutOf;
@@ -223,7 +223,7 @@ function getXYByPosition(board, position) {
         return null;
     }
 
-    const size = getBoardSize(board);
+    var size = getBoardSize(board);
     return {
         x: position % size,
         y: (position - (position % size)) / size
@@ -246,7 +246,7 @@ exports.sum = sum;
  * @returns {keyof ELEMENT}
  */
 function getElementByXY(board, position) {
-    const size = getBoardSize(board);
+    var size = getBoardSize(board);
     return board[size * position.y + position.x];
 }
 exports.getElementByXY = getElementByXY;
@@ -254,7 +254,7 @@ exports.getElementByXY = getElementByXY;
  * @returns {keyof ELEMENT}
  */
 function getElementByXYArr(boardArr, position) {
-    const size = getBoardSize(boardArr);
+    var size = getBoardSize(boardArr);
     return boardArr[size * position.y + position.x];
 }
 exports.getElementByXYArr = getElementByXYArr;

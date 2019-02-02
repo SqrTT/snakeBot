@@ -26,25 +26,36 @@ client.on('connect', function (connection) {
         function logger(message) {
             programLogs += message + "\n"
         }
-        var answer = getNextSnakeMove(board, logger);
-        var boardString = getBoardAsString(board);
+        try {
+            var answer = getNextSnakeMove(board, logger);
+            var boardString = getBoardAsString(board);
 
-        var logMessage = '';
-        if (programLogs) {
+            var logMessage = '';
+            if (programLogs) {
+                logMessage += "-----------------------------------\n";
+                logMessage += programLogs;
+            }
             logMessage += "-----------------------------------\n";
-            logMessage += programLogs;
+            logMessage += "Answer: " + answer + "\n";
+
+
+            console.info(boardString);
+            console.debug(logMessage);
+            return answer;
+        } catch (e) {
+            logger(`!!!!!!!!!!!!!!!!!!!!!!!!`);
+            logger(JSON.stringify(e));
+            logger(`!!!!!!!!!!!!!!!!!!!!!!!!`);
+
+
+            console.error(boardString);
+
+            //logger(`next: ${q[1]} ${q[2]}`);
+            return 'ACT';
         }
-        logMessage += "-----------------------------------\n";
-        logMessage += "Answer: " + answer + "\n";
 
-
-        console.info(boardString);
-        console.debug(logMessage);
         //printBoard(boardString);
         //printLog(logMessage + '\n\n' + boardString);
-
-
-        return answer;
     }
 
 
@@ -61,6 +72,7 @@ client.on('connect', function (connection) {
 });
 
 var URL = 'https://game1.epam-bot-challenge.com.ua/codenjoy-contest/board/player/tolik@sqrtt.pro?code=1950246074193093654';
+//var URL = 'https://game3.epam-bot-challenge.com.ua/codenjoy-contest/board/player/tolik@sqrtt.pro?code=1950246074193093654';
 
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");
 

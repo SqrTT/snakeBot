@@ -9,7 +9,7 @@ const {
 describe("bot", () => {
     describe("getNextSnakeMove", () => {
         const mockLogger = (a) => {
-            console.log(a);
+           // console.log(a);
         };
 
         it("should define method", () => {
@@ -22,6 +22,7 @@ describe("bot", () => {
                 '☼   ☼' +
                 '☼ ╘►☼' +
                 '☼☼☼☼☼';
+
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.UP);
         });
@@ -37,7 +38,7 @@ describe("bot", () => {
             expect(move).toEqual(COMMANDS.DOWN);
         });
 
-        it("should try to catch apples", () => {
+        it("should try to catch apples DOWN", () => {
             const board =
                 '☼☼☼☼☼☼' +
                 '☼ ╘► ☼' +
@@ -45,14 +46,109 @@ describe("bot", () => {
                 '☼    ☼' +
                 '#    ☼' +
                 '☼☼☼☼☼☼';
+
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.DOWN);
         });
 
-        it("sdf", () => {
+        // it('strange head', () => {
+        //     const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼                           ☼☼#                           ☼☼☼       ●                   ☼☼☼                      ○    ☼☼☼           ●           ╘══╗☼☼☼     ☼☼☼☼☼              ╔═╝☼☼☼     ☼                  ♥  ☼☼#     ☼☼☼  ○     ☼☼☼☼#      ☼☼☼     ☼    ●     ☼   ☼  ●$  ☼☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼☼☼                ☼          ☼☼☼                ☼         $☼☼☼        ●                  ☼☼#                           ☼☼☼                          ©☼☼☼        ☼☼☼                ☼☼☼       ☼○ ☼                ☼☼☼      ☼☼☼☼#     ☼☼  ©☼#    ☼☼☼      ☼   ☼  ○● ☼ ☼ ☼ ☼ ○  ☼☼#      ☼   ☼     ☼  ☼  ☼    ☼☼☼                ☼     ☼    ☼☼☼ ●              ☼    ○☼    ☼☼☼             ˄             ☼☼☼             ¤    ○        ☼☼☼                       ○   ☼☼#                           ☼☼☼               ●           ☼☼☼                           ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+        //     const move = getNextSnakeMove(board, mockLogger);
+        //     expect(move).toEqual(COMMANDS.DOWN);
+        // })
+
+
+
+        it("should try to catch apples UP", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼  ○ ☼' +
+                '☼ ╘► ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.UP);
+        });
+
+        it("should try to catch apples RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ►○ ☼' +
+                '☼ ╘  ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should try to catch apples LEFT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ○► ☼' +
+                '☼  ╘ ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.LEFT);
+        });
+
+        it("should choose gold in favor of apple RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ○►$☼' +
+                '☼  ╘ ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+        it("should avoid dead ends", () => {
+            const board =
+`☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
+☼☼       ○               ►   ☼
+☼#                       ╚══╕☼
+☼☼       ●                   ☼
+☼☼                           ☼
+☼☼                           ☼
+☼☼     ☼☼☼☼☼                 ☼
+☼☼     ☼                     ☼
+☼#     ☼☼☼        ☼☼☼☼#      ☼
+☼☼     ☼          ☼   ☼   æ  ☼
+☼☼     ☼☼☼☼#      ☼☼☼☼#   ˅  ☼
+☼☼                ☼          ☼
+☼☼                ☼         $☼
+☼☼    ●  ○                   ☼
+☼#   ©                ○      ☼
+☼☼                           ☼
+☼☼        ☼☼☼                ☼
+☼☼   ○   ☼  ☼                ☼
+☼☼      ☼☼☼☼#     ☼☼   ☼#○   ☼
+☼☼     ©☼   ☼   ● ☼ ☼ ☼ ☼ ○○ ☼
+☼#      ☼   ☼     ☼  ☼  ☼    ☼
+☼☼     ○          ☼     ☼    ☼
+☼☼     ●       $  ☼     ☼    ☼
+☼☼                           ☼
+☼☼                  ○        ☼
+☼☼ ○    ○      ●         ○   ☼
+☼#                           ☼
+☼☼               ○           ☼
+☼☼                           ☼
+☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼`;
+
+            const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
+            expect(move).toEqual(COMMANDS.LEFT);
+        });
+
+
+        it("should leave home floor", () => {
             const board =
 
-`☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
+                `☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
 ☼☼                   ●   ●   ☼
 ☼#                       ○   ☼
 ☼☼       ●                   ☼
