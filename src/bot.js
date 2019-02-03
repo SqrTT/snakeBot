@@ -28,7 +28,7 @@ function getNextSnakeMove(board, logger) {
 
     var timeStep = Date.now();
     minimaxCounter = 0;
-    var q = minimax(3, state, arrBoard.length);
+    var q = minimax(13, state, arrBoard.length, 49, -49, 0);
     var timeStepEnd = Date.now();
 
     logger(`next: ${q[SCORE]} ${q[COMMENT]}`);
@@ -50,29 +50,39 @@ function getMin(a, b) {
  *
  * @param {number} depth
  * @param {State} state
+ * @param {number} alpha
+ * @param {number} boardSize
+ * @param {number} beta
+ * @param {number} score
  * @returns {[string, number, string]}
  */
-function minimax(depth = 0, state, boardSize = 30) {
+function minimax(depth, state, boardSize, alpha, beta, score) {
     minimaxCounter++;
-    if (depth < 1) {
-        return [COMMANDS.RIGHT, -Infinity, 'END'];
+    if (depth < 1 || minimaxCounter > 1000000) {
+        return [COMMANDS.RIGHT, score, 'END'];
     } else if (!state.player.isDead) {
-        /**
-         * @type {[string, number, string]}
-         */
-        var maxPlayerVal = [COMMANDS.ACT, -Infinity, 'MAX'];
+        var betterChoice = [COMMANDS.RIGHT, -Infinity, 'DEFAULT']
 
         for (var playerActionIDX = state.player.nextSteps.length - 1; playerActionIDX >= 0; --playerActionIDX) {
             var playerAction = state.player.nextSteps[playerActionIDX];
-            var minEnemyVal = [COMMANDS.ACT, +Infinity];
             var enemiesCount = state.enemies.length;
 
-            if (enemiesCount === 1) {
+            if (true) {
+                var result = evaluateMove(state, playerAction, [], depth, boardSize, alpha, beta, score);
+                if (alpha < result[SCORE]) {
+                    return result;
+                }
+                betterChoice = getMax(betterChoice, result);
+            } else if (enemiesCount === 1) {
                 var enemy1Steps = state.enemies[0].nextSteps;
                 for (var enemyStepIdx1 = enemy1Steps.length - 1; enemyStepIdx1 >= 0; enemyStepIdx1--) {
                     var enemyAction1 = enemy1Steps[enemyStepIdx1];
 
-                    ({ maxPlayerVal, minEnemyVal } = evaluateMove(state, playerAction, [enemyAction1], maxPlayerVal, minEnemyVal, depth, boardSize));
+                    var result = evaluateMove(state, playerAction, [enemyAction1], depth, boardSize, alpha, beta, score);
+                    if (alpha < result[SCORE]) {
+                        return result;
+                    }
+                    betterChoice = getMax(betterChoice, result);
 
                 }
             } else if (enemiesCount === 2) {
@@ -84,7 +94,11 @@ function minimax(depth = 0, state, boardSize = 30) {
                     for (var enemyStepIdx2 = enemy2Steps.length - 1; enemyStepIdx2 >= 0; enemyStepIdx2--) {
                         var enemyAction2 = enemy2Steps[enemyStepIdx2];
 
-                        ({ maxPlayerVal, minEnemyVal } = evaluateMove(state, playerAction, [enemyAction1, enemyAction2], maxPlayerVal, minEnemyVal, depth, boardSize));
+                        var result = evaluateMove(state, playerAction, [enemyAction1, enemyAction2], depth, boardSize, alpha, beta, score);
+                        if (alpha < result[SCORE]) {
+                            return result;
+                        }
+                        betterChoice = getMax(betterChoice, result);
                     }
 
                 }
@@ -101,7 +115,11 @@ function minimax(depth = 0, state, boardSize = 30) {
                         for (var enemyStepIdx3 = enemy3Steps.length - 1; enemyStepIdx3 >= 0; enemyStepIdx3--) {
                             var enemyAction3 = enemy3Steps[enemyStepIdx3];
 
-                            ({ maxPlayerVal, minEnemyVal } = evaluateMove(state, playerAction, [enemyAction1, enemyAction2, enemyAction3], maxPlayerVal, minEnemyVal, depth, boardSize));
+                            var result = evaluateMove(state, playerAction, [enemyAction1, enemyAction2, enemyAction3], depth, boardSize, alpha, beta, score);
+                            if (alpha < result[SCORE]) {
+                                return result;
+                            }
+                            betterChoice = getMax(betterChoice, result);
 
                         }
                     }
@@ -124,7 +142,11 @@ function minimax(depth = 0, state, boardSize = 30) {
                             for (var enemyStepIdx4 = enemy4Steps.length - 1; enemyStepIdx4 >= 0; enemyStepIdx4--) {
                                 var enemyAction4 = enemy4Steps[enemyStepIdx4];
 
-                                ({ maxPlayerVal, minEnemyVal } = evaluateMove(state, playerAction, [enemyAction1, enemyAction2, enemyAction3, enemyAction4], maxPlayerVal, minEnemyVal, depth, boardSize));
+                                var result = evaluateMove(state, playerAction, [enemyAction1, enemyAction2, enemyAction3, enemyAction4], depth, boardSize, alpha, beta, score);
+                                if (alpha < result[SCORE]) {
+                                    return result;
+                                }
+                                betterChoice = getMax(betterChoice, result);
 
                             }
 
@@ -132,38 +154,40 @@ function minimax(depth = 0, state, boardSize = 30) {
                     }
                 }
             }
-
-            //for (var enemy of board.enemies) {
-            // for (var enemyActionIdx = COMMANDS_LIST_LENGTH; enemyActionIdx >= 0; --enemyActionIdx) {
-
-            // }
-            //}
-            maxPlayerVal = getMax(maxPlayerVal, minEnemyVal);
-
         }
-        return maxPlayerVal;
+        return betterChoice;
     } else {
         return [COMMANDS.RIGHT, 0, 'NO Player'];
     }
 }
 
-
-function evaluateMove(state, playerAction, enemyActions, maxPlayerVal, minEnemyVal, depth, boardSize) {
+/**
+ *
+ * @param {State} state
+ * @param {string} playerAction
+ * @param {string[]} enemyActions
+ * @param {number} depth
+ * @param {number} boardSize
+ * @param {number} alpha
+ * @param {number} beta
+ * @param {number} score
+ */
+function evaluateMove(state, playerAction, enemyActions, depth, boardSize, alpha, beta, score) {
     var emulatedStep = state.step(playerAction, enemyActions);
-    var playerScore = emulatedStep.playerScore;
-    playerScore[ANSWER] = playerAction;
-    //playerScore[1] =  playerScore[1] / 1.5;
-    maxPlayerVal = getMax(maxPlayerVal, playerScore);
+
+    score = score + emulatedStep.playerScore;
+
     var emulatesLength = emulatedStep.enemiesScores.length;
     for (var scoreIdx = 0; emulatesLength < scoreIdx; scoreIdx++) {
-        var score = emulatedStep.enemiesScores[scoreIdx];
-        score[ANSWER] = playerAction;
-        minEnemyVal = getMin(minEnemyVal, score);
+        score = score + emulatedStep.enemiesScores[scoreIdx];
     }
-    var value = minimax(depth - 1, emulatedStep.state, boardSize);
-    value[ANSWER] = playerAction;
-    value[SCORE] = value[SCORE] / 1.1;
-    minEnemyVal = getMin(minEnemyVal, value);
-    return { maxPlayerVal, minEnemyVal };
+    if (score < alpha && beta < score) {
+        var value = minimax(depth - 1, emulatedStep.state, boardSize, alpha, beta, score);
+        value[ANSWER] = playerAction;
+        value[SCORE] = value[SCORE] / 1.1;
+        return value;
+    } else {
+        return [playerAction, score, 'early hit'];
+    }
 }
 

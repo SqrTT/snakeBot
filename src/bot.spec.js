@@ -80,6 +80,7 @@ describe("bot", () => {
                 '☼ ╘  ☼' +
                 '#    ☼' +
                 '☼☼☼☼☼☼';
+                debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         });
@@ -127,6 +128,7 @@ describe("bot", () => {
                 '☼  ╘ ☼' +
                 '#    ☼' +
                 '☼☼☼☼☼☼';
+               // debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         });
@@ -141,8 +143,8 @@ describe("bot", () => {
 ☼☼     ☼☼☼☼☼                 ☼
 ☼☼     ☼                     ☼
 ☼#     ☼☼☼        ☼☼☼☼#      ☼
-☼☼     ☼          ☼   ☼   æ  ☼
-☼☼     ☼☼☼☼#      ☼☼☼☼#   ˅  ☼
+☼☼     ☼          ☼   ☼      ☼
+☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼
 ☼☼                ☼          ☼
 ☼☼                ☼         $☼
 ☼☼    ●  ○                   ☼
@@ -162,7 +164,7 @@ describe("bot", () => {
 ☼☼               ○           ☼
 ☼☼                           ☼
 ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼`;
-
+//debugger;
             const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
             expect(move).toEqual(COMMANDS.LEFT);
         });
@@ -201,6 +203,7 @@ describe("bot", () => {
 ☼☼        │   │         ○    ☼
 ☼☼        └───┘          ©   ☼
 ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼`;
+//debugger;
             const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         })
