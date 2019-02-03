@@ -38,8 +38,8 @@ socket.addEventListener('close', function (event) {
     console.log('Closed');
 });
 
-var forceGC = function () {}
-if (typeof gc ==='function') {
+var forceGC = function () { }
+if (typeof gc === 'function') {
     forceGC = gc;
     console.log('Clean gc usage');
 } else {
@@ -58,12 +58,21 @@ socket.addEventListener('message', function (event) {
     })
 });
 
+var logObject = {
+    sessions: {}
+};
+
+var currentLogState;
+var currentSessID;
 function processBoard(board) {
     var programLogs = "";
     function logger(message) {
         programLogs += message + "\n"
     }
-    var answer = getNextSnakeMove(board, logger);
+    var answer = getNextSnakeMove(board, logger, (sessid, newLogState) => {
+        currentLogState = newLogState;
+        currentSessID = sessid;
+    });
     var boardString = getBoardAsString(board);
 
     var logMessage = '';
@@ -88,8 +97,19 @@ function processBoard(board) {
         }
     }
 
+    if (currentLogState) {
+        if (!logObject.sessions[currentSessID]) {
+            logObject.sessions[currentSessID] = [];
+        }
+        logObject.sessions[currentSessID].push(currentLogState);
+        currentLogState.debug = {
+            msg: logMessage
+        }
+        currentLogState = null;
+    }
+
     printBoard(boardString);
-    printLog(logMessage + '\n\n' + boardString);
+    printLog(logMessage + '\n\n');
 
 
     return answer;
@@ -121,6 +141,15 @@ function printLog(text) {
         }
         textarea.value = content;
     }
+}
+
+var saveLogBtn = document.querySelector('#saveLog');
+if (saveLogBtn) {
+    saveLogBtn.addEventListener('click', () => {
+        var FileSaver = require('file-saver');
+        var blob = new Blob([JSON.stringify(logObject)], { type: "text/plain;charset=utf-8" });
+        FileSaver.saveAs(blob, `snake-log-${(new Date().toISOString())}.json`);
+    });
 }
 
 

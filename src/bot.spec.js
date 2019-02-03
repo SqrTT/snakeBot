@@ -5,12 +5,38 @@ const {
 const {
     COMMANDS
 } = require('./constants');
+const mockLogger = (a) => {
+    // console.log(a);
+};
 
 describe("bot", () => {
+    describe('ENEMIES', () => {
+        it("should avoid enemy potential step", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#        ☼' +
+                '☼   ╘►   ☼' +
+                '☼  ×──>  ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.RIGHT);
+        });
+        it("should attack enemy in fury", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#        ☼' +
+                '☼    ╘♥  ☼' +
+                '☼  ×──>  ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.DOWN);
+        });
+    })
+
     describe("getNextSnakeMove", () => {
-        const mockLogger = (a) => {
-           // console.log(a);
-        };
+
 
         it("should define method", () => {
             expect(getNextSnakeMove).toBeDefined();
@@ -22,7 +48,6 @@ describe("bot", () => {
                 '☼   ☼' +
                 '☼ ╘►☼' +
                 '☼☼☼☼☼';
-
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.UP);
         });
@@ -128,13 +153,13 @@ describe("bot", () => {
                 '☼  ╘ ☼' +
                 '#    ☼' +
                 '☼☼☼☼☼☼';
-               // debugger;
+            // debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         });
         it("should avoid dead ends", () => {
             const board =
-`☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
+                `☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
 ☼☼       ○               ►   ☼
 ☼#                       ╚══╕☼
 ☼☼       ●                   ☼
@@ -164,7 +189,7 @@ describe("bot", () => {
 ☼☼               ○           ☼
 ☼☼                           ☼
 ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼`;
-//debugger;
+            //debugger;
             const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
             expect(move).toEqual(COMMANDS.LEFT);
         });
@@ -203,7 +228,7 @@ describe("bot", () => {
 ☼☼        │   │         ○    ☼
 ☼☼        └───┘          ©   ☼
 ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼`;
-//debugger;
+
             const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         })

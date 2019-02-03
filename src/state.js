@@ -137,24 +137,23 @@ var EVALUATION_MAP = {
 }
 
 /**
- * @param {[string[]]} board
+ * @param {string[][]} board
  * @param {[number, number]} pos
  * @param {string} value
- * @returns {[string[]]}
  */
 function setValAtMut(board, pos, value) {
     board[pos[Y]][pos[X]] = value;
     return board;
 }
 /**
- * @param {[string[]]} board
+ * @param {string[][]} board
  * @param {[number, number]} pos
  * @param {string} value
- * @returns {[string[]]}
+ * @returns {string[][]}
  */
 function setValAt(board, pos, value) {
     /**
-     * @type {[string[]]}
+     * @type {string[][]}
      */
     var newArr = [];
     newArr.length = board.length;
@@ -218,7 +217,7 @@ class Element {
 }
 
 class Snake {
-    constructor() {
+    constructor(head) {
         this.furyCount = 0;
         this.flyCount = 0;
         this.isDead = false;
@@ -229,7 +228,7 @@ class Snake {
         /**
          * @type {Element}
          */
-        this.head = undefined;
+        this.head = head;
 
         /**
          * @type {Element[]}
@@ -284,12 +283,12 @@ class Snake {
     }
 }
 class State {
-    constructor() {
+    constructor(player) {
         this.boardMatrix = undefined;
         /**
          * @type Snake
          */
-        this.player = undefined;
+        this.player = player;
         /**
          * @type Snake[]
          */
@@ -314,7 +313,7 @@ class State {
         /**
          * @type {number}
          */
-        var playerScore;
+        var playerScore = -Infinity;
 
         /// move player
         newState.player = this.player.move(playerAction, this.boardMatrix);
@@ -458,6 +457,8 @@ class State {
                 }
 
                 return true;
+            } else {
+                return false;
             }
         });
 

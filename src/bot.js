@@ -8,19 +8,16 @@ var PF = require('pathfinding');
 const EATING_STONE_SIZE = 6;
 let turnsCount = 0;
 let stayOnTheWayCount = 0;
-let evilCount = 0;
-let flyCount = 0;
-
-const ANSWER = 0,
-    SCORE = 1,
-    COMMENT = 2,
-    X = 0,
-    Y = 1,
-    COMMANDS_LIST_LENGTH = COMMANDS_LIST.length - 1;
 
 
-var minimaxCounter = 0
+const X = 0,
+    Y = 1;
 
+/**
+ * @type {string}
+ */
+var sessionID;
+var pathMatrix;
 /**
  * @type {State}
  */
@@ -30,7 +27,7 @@ var lastState;
  * @param {string} board
  * @param {(asg: any)=> void} logger
  */
-function getNextSnakeMoveInner(board, logger) {
+function getNextSnakeMoveInner(board, logger, logState) {
     if (isGameOver(board)) {
         return '';
     }
@@ -38,34 +35,51 @@ function getNextSnakeMoveInner(board, logger) {
     var currentState = State.getState(board, lastState);
     lastState = currentState;
 
-    if (!currentState.player.isDead) {
+    if (!currentState.player || currentState.player.isDead) {
+        sessionID = '';
         turnsCount = 0;
         return '';
     } else {
+        if (!sessionID) {
+            sessionID = (new Date()).toISOString();
+        }
         turnsCount++;
     }
+    pathMatrix = '';
 
-    if (evilCount > 0) {
-        evilCount--;
-    }
-    if (flyCount > 0) {
-        flyCount--;
-    }
-
-    logger(`turn: ${turnsCount} x:${currentState.player.head[0]} y: ${currentState.player.head.pos[1]} evil: ${evilCount} fly: ${flyCount}`);
-    var selfSize = 0;
-    var enemiesSize = 0;
-    var enemiesCount = 0;
-    board.split('').forEach(x => {
-        if (isSelf(x)) {
-            selfSize += 1;
-        } else if (isEnemy(x)) {
-            enemiesSize++;
-            if (ENEMY_HEAD.indexOf(x) > -1) {
-                enemiesCount++;
+    function writeLog(el) {
+        var nextPos = sum(DIRECTIONS_MAP[el.command], currentState.player.head.getPos())
+        var logObject = {
+            pathMatrix: pathMatrix,
+            tickNumber: turnsCount,
+            board: board,
+            snakeIsDead: false,
+            possibleTargets: directions.map(dir => ({
+                points: dir.distance,
+                element: {
+                    x: dir.pos[X],
+                    y: dir.pos[Y]
+                }
+            })),
+            selectedTarget: {
+                x: el.pos[X],
+                y: el.pos[Y]
+            },
+            nextPosition: {
+                x: nextPos[X],
+                y: nextPos[Y]
             }
         }
-    });
+
+        logState(sessionID, logObject);
+    }
+
+
+    logger(`turn: ${turnsCount} x:${currentState.player.head.pos[0]} y: ${currentState.player.head.pos[1]} evil: ${currentState.player.flyCount} fly: ${currentState.player.flyCount}`);
+    var selfSize = currentState.player.elements.length;
+    var enemiesCount = currentState.enemies.length;
+    var enemiesSize = 0;
+
     var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
     logger(`Size: ${selfSize}`);
     logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
@@ -84,71 +98,42 @@ function getNextSnakeMoveInner(board, logger) {
     var ACT = mode === 'evil' ? 'ACT,' : '';
 
     /// attack
-    // attack enemy head (evil)
-    if (mode === 'evil' && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
-        logger('attack enemy head (evil): ' + el.distance);
-        return ACT + el.command;
-    }
 
-    // attack enemy head (normal)
-    if (selfSize - 2 > enemiesSize && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
-        logger('attack enemy head (normal): ' + el.distance);
-        return ACT + el.command;
-    }
-    // cut body
-    if (mode === 'evil' && (el = directions.find(x => (isEnemyBody(x.element) || isEnemyHead(x.element)) && x.distance < evilCount + 1))) {
-        logger('attack enemy body:' + el.distance);
-        console.log('attack enemy body/head: ' + el.distance);
-
-        return ACT + el.command;
-    }
-    // stay on the way
-    if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 2 && isEnemyHead(x.element) && x.distance < 2))) {
-        logger('stay on the way 2: ' + el.distance);
-        console.log('stay on the way 2: ' + el.distance);
-
-        stayOnTheWayCount++;
-        return ACT + el.command;
-    } else if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 3 && isEnemyHead(x.element) && x.distance < 3))) {
-        logger('stay on the way 3: ' + el.distance);
-        console.log('stay on the way 3: ' + el.distance);
-
-        stayOnTheWayCount++;
-        return ACT + el.command;
-    } else {
-        stayOnTheWayCount = 0;
-    }
-    ///
-
-    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < evilCount + 1))) {
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount + 1))) {
         logger('fury stone: ' + el.distance);
+        writeLog(el)
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance === 1))) {
+        logger('extra short gold: ' + el.distance);
+        writeLog(el)
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance === 1))) {
         logger('extra short apple: ' + el.distance);
+        writeLog(el)
         return ACT + el.command;
     } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 3))) {
         logger('short self cut stone: ' + el.distance);
+        writeLog(el)
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 15))) {
         logger('short fury: ' + el.distance);
-        if (el.distance === 1) {
-            evilCount = 10;
-        }
+        writeLog(el)
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
         logger('short gold: ' + el.distance);
+        writeLog(el)
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 10))) {
         logger('short apple: ' + el.distance);
+        writeLog(el)
         return ACT + el.command;
     } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
         logger('self cut stone: ' + el.distance);
+        writeLog(el)
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.FLYING_PILL && x.distance < 3))) {
         logger('short fly: ' + el.distance);
-        if (el.distance === 1) {
-            flyCount = 10;
-        }
+        writeLog(el)
         return ACT + el.command;
     } else {
         logger('find goods');
@@ -183,16 +168,16 @@ function getNextSnakeMoveInner(board, logger) {
         })
         if (nextWeight === 0) {
             logger('no goods, avoid walls');
-
             nextCommand = currentState.player.nextSteps[0] || 'ACT';
 
         }
+        //writeLog(el);
         return ACT + nextCommand;
     }
 }
 
 
-function getDirections(board, headPosition, selfSize, rateElement, findFloor = false, countOnEnemyHeads = true, mode = 'normal', skipAhead = true) {
+function getDirections(board, headPosition, selfSize, rateElement, findFloor = false, countOnEnemyHeads = true, mode = 'normal') {
     const directions = [];
     const boardSize = getBoardSize(board);
 
@@ -243,6 +228,9 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                     boardClone[y][x - 1] = 1;
                     //console.log('count');
                 }
+                if (!pathMatrix) {
+                    pathMatrix = boardClone;
+                }
 
                 // if (!findFloor && !skipAhead && isEnemyHead(element)) {
                 //     const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
@@ -275,33 +263,36 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                     //path.shift();
                     const [nextX, nextY] = path[1];
 
-                    if (findFloor || !isDeadEnd(board, x, y, path)) {
+                    if (findFloor || !isDeadEnd(board, [x, y], path)) {
                         if (element === ELEMENT.FURY_PILL && path.length >= 7) {
-                            const stones = getDirections(board, ({ x, y }), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
+                            const stones = getDirections(board, ([x, y]), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
 
                             if ((stones && stones.length && stones[0].distance < 8)) {
                                 //console.log('see firy pill');
                                 directions.push({
+                                    pos: [x, y],
                                     element: element,
                                     distance: path.length - 1,
-                                    command: getCoomandByCoord(headPosition[X], headPosition[Y], nextX, nextY)
+                                    command: getCommandByCoords(headPosition[X], headPosition[Y], nextX, nextY)
                                 });
                             }
                         } else if (!findFloor && (element === ELEMENT.APPLE || element === ELEMENT.GOLD || element === ELEMENT.FURY_PILL)) {
-                            const enemies = getDirections(board, ({ x, y }), +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil', true);
+                            const enemies = getDirections(board, ([x, y]), +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil');
 
                             if (!enemies || !enemies.length || enemies[0].distance > 2) {
                                 directions.push({
+                                    pos: [x, y],
                                     element: element,
                                     distance: path.length - 1,
-                                    command: getCoomandByCoord(headPosition[X], headPosition[Y], nextX, nextY)
+                                    command: getCommandByCoords(headPosition[X], headPosition[Y], nextX, nextY)
                                 });
                             }
                         } else {
                             directions.push({
+                                pos: [x, y],
                                 element: element,
                                 distance: path.length - 1,
-                                command: getCoomandByCoord(headPosition[X], headPosition[Y], nextX, nextY)
+                                command: getCommandByCoords(headPosition[X], headPosition[Y], nextX, nextY)
                             });
                         }
                     }
@@ -325,19 +316,19 @@ function getPaths(boardClone, headPosition, x, y) {
     return path;
 }
 
-function isDeadEnd(board, x, y, path) {
+function isDeadEnd(board, pos, path) {
     const arrayBoard = getBoardAsArray(board).map(x => x.split(''));
-    path.forEach(([x, y]) => {
-        arrayBoard[y][x] = ELEMENT.WALL;
+    path.forEach((posInner) => {
+        arrayBoard[posInner[Y]][posInner[X]] = ELEMENT.WALL;
     });
-    arrayBoard[y][x] = 'X';
+
     const strBoard = arrayBoard.map(x => x.join('')).join('');
 
-    var dir = getDirections(strBoard, { x, y }, +Infinity, (e) => e === ELEMENT.START_FLOOR, true)
+    var dir = getDirections(strBoard, pos, +Infinity, (e) => e === ELEMENT.START_FLOOR, true)
 
     return dir.length === 0;
 }
-function getCoomandByCoord(x, y, x2, y2) {
+function getCommandByCoords(x, y, x2, y2) {
     if (x < x2) {
         return COMMANDS.RIGHT;
     } else if (x > x2) {
@@ -377,9 +368,9 @@ function rateElement(element) {
 }
 
 
-exports.getNextSnakeMove = function (board, logger) {
+exports.getNextSnakeMove = function (board, logger, logState) {
     var time = Date.now();
-    const res = getNextSnakeMoveInner(board, logger);
+    const res = getNextSnakeMoveInner(board, logger, logState);
     logger('turn time: ' + (Date.now() - time));
     return res;
 };

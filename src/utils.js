@@ -39,6 +39,9 @@ exports.getBoardAsString = getBoardAsString;
  */
 function getBoardAsArray(board) {
     var size = getBoardSize(board);
+    /**
+     * @type {string[]}
+     */
     var result = [];
     for (var i = 0; i < size; i++) {
         result.push(board.substring(i * size, (i + 1) * size));
@@ -96,7 +99,7 @@ exports.multPositions = multPositions;
  *
  * @param {Array<string[]>} board
  * @param {string} el
- * @return {[number, number]}
+ * @return {[number, number]|undefined}
  */
 function findElementPos(board, el) {
     for (var y = board.length - 1; y >= 0; y--) {
@@ -255,7 +258,7 @@ function sum(a1, a2) {
 exports.sum = sum;
 
 /**
- * @returns {keyof ELEMENT}
+ * @returns {string}
  */
 function getElementByXY(board, position) {
     var size = getBoardSize(board);
@@ -263,7 +266,7 @@ function getElementByXY(board, position) {
 }
 exports.getElementByXY = getElementByXY;
 /**
- * @returns {keyof ELEMENT}
+ * @returns {string}
  */
 function getElementByXYArr(boardArr, position) {
     var size = getBoardSize(boardArr);

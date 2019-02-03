@@ -1,8 +1,12 @@
 {
     "compilerOptions": {
         "baseUrl": ".",
+        "strictNullChecks": true,
         "checkJs": true,
         "target": "es5",
-        "module": "commonjs"
+        "module": "commonjs",
+        "lib": [
+            "es6", "dom"
+        ]
     }
 }
