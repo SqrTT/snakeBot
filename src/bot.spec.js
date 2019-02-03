@@ -80,7 +80,7 @@ describe("bot", () => {
                 '☼ ╘  ☼' +
                 '#    ☼' +
                 '☼☼☼☼☼☼';
-                debugger;
+
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         });

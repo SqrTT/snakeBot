@@ -1,9 +1,15 @@
 
-var { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP } = require('./constants');
-var {
-    isGameOver, getHeadPosition, getElementByXY, getBoardAsArray, findElementPos, sum
+const { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP, ENEMY_HEAD, ENEMY_TAIL } = require('./constants');
+const {
+    isGameOver, getHeadPosition, getBoardSize, getElementByXY, getBoardAsArray, findElementPos, sum, isEnemyHead, isEnemyBody, getAt, isSleep, isSelf, isEnemy
 } = require('./utils');
 var { State, getValAt } = require('./state');
+var PF = require('pathfinding');
+const EATING_STONE_SIZE = 6;
+let turnsCount = 0;
+let stayOnTheWayCount = 0;
+let evilCount = 0;
+let flyCount = 0;
 
 const ANSWER = 0,
     SCORE = 1,
@@ -14,180 +20,367 @@ const ANSWER = 0,
 
 
 var minimaxCounter = 0
-function getNextSnakeMove(board, logger) {
+
+/**
+ * @type {State}
+ */
+var lastState;
+/**
+ *
+ * @param {string} board
+ * @param {(asg: any)=> void} logger
+ */
+function getNextSnakeMoveInner(board, logger) {
     if (isGameOver(board)) {
         return '';
     }
 
-    var timeBoard = Date.now();
-    var arrBoard = getBoardAsArray(board);
-    var state = State.getState(board);
-    // console.log(state);
-    var timeBoardEnd = Date.now();
+    var currentState = State.getState(board, lastState);
+    lastState = currentState;
 
+    if (!currentState.player.isDead) {
+        turnsCount = 0;
+        return '';
+    } else {
+        turnsCount++;
+    }
 
-    var timeStep = Date.now();
-    minimaxCounter = 0;
-    var q = minimax(13, state, arrBoard.length, 49, -49, 0);
-    var timeStepEnd = Date.now();
+    if (evilCount > 0) {
+        evilCount--;
+    }
+    if (flyCount > 0) {
+        flyCount--;
+    }
 
-    logger(`next: ${q[SCORE]} ${q[COMMENT]}`);
-    logger(`time: board: ${timeBoardEnd - timeBoard}, step: ${timeStepEnd - timeStep}`);
-    logger(`calls ${minimaxCounter}  (${(minimaxCounter / (timeStepEnd - timeStep)).toFixed()} call/ms)`);
+    logger(`turn: ${turnsCount} x:${currentState.player.head[0]} y: ${currentState.player.head.pos[1]} evil: ${evilCount} fly: ${flyCount}`);
+    var selfSize = 0;
+    var enemiesSize = 0;
+    var enemiesCount = 0;
+    board.split('').forEach(x => {
+        if (isSelf(x)) {
+            selfSize += 1;
+        } else if (isEnemy(x)) {
+            enemiesSize++;
+            if (ENEMY_HEAD.indexOf(x) > -1) {
+                enemiesCount++;
+            }
+        }
+    });
+    var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
+    logger(`Size: ${selfSize}`);
+    logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
 
-    return q[ANSWER];
+    var mode = 'normal';
+    if (currentState.player.flyCount > 0) {
+        mode = 'fly';
+    } else if (currentState.player.furyCount > 0) {
+        mode = 'evil';
+    }
+    const scareEnemyes = mode !== 'evil' || currentState.player.elements.length >= enemiesSize + 2;
+    const directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, scareEnemyes, mode);
+    logger('path count: ' + JSON.stringify(directions.length));
+
+    var el;
+    var ACT = mode === 'evil' ? 'ACT,' : '';
+
+    /// attack
+    // attack enemy head (evil)
+    if (mode === 'evil' && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
+        logger('attack enemy head (evil): ' + el.distance);
+        return ACT + el.command;
+    }
+
+    // attack enemy head (normal)
+    if (selfSize - 2 > enemiesSize && (el = directions.find(x => x.ahead === 1 && isEnemyHead(x.element) && x.distance === 1))) {
+        logger('attack enemy head (normal): ' + el.distance);
+        return ACT + el.command;
+    }
+    // cut body
+    if (mode === 'evil' && (el = directions.find(x => (isEnemyBody(x.element) || isEnemyHead(x.element)) && x.distance < evilCount + 1))) {
+        logger('attack enemy body:' + el.distance);
+        console.log('attack enemy body/head: ' + el.distance);
+
+        return ACT + el.command;
+    }
+    // stay on the way
+    if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 2 && isEnemyHead(x.element) && x.distance < 2))) {
+        logger('stay on the way 2: ' + el.distance);
+        console.log('stay on the way 2: ' + el.distance);
+
+        stayOnTheWayCount++;
+        return ACT + el.command;
+    } else if (stayOnTheWayCount === 0 && (el = directions.find(x => x.ahead === 3 && isEnemyHead(x.element) && x.distance < 3))) {
+        logger('stay on the way 3: ' + el.distance);
+        console.log('stay on the way 3: ' + el.distance);
+
+        stayOnTheWayCount++;
+        return ACT + el.command;
+    } else {
+        stayOnTheWayCount = 0;
+    }
+    ///
+
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < evilCount + 1))) {
+        logger('fury stone: ' + el.distance);
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance === 1))) {
+        logger('extra short apple: ' + el.distance);
+        return ACT + el.command;
+    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 3))) {
+        logger('short self cut stone: ' + el.distance);
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 15))) {
+        logger('short fury: ' + el.distance);
+        if (el.distance === 1) {
+            evilCount = 10;
+        }
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 15))) {
+        logger('short gold: ' + el.distance);
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.APPLE && x.distance < 10))) {
+        logger('short apple: ' + el.distance);
+        return ACT + el.command;
+    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
+        logger('self cut stone: ' + el.distance);
+        return ACT + el.command;
+    } else if ((el = directions.find(x => x.element === ELEMENT.FLYING_PILL && x.distance < 3))) {
+        logger('short fly: ' + el.distance);
+        if (el.distance === 1) {
+            flyCount = 10;
+        }
+        return ACT + el.command;
+    } else {
+        logger('find goods');
+        var foodDir = {
+            [COMMANDS.LEFT]: 0,
+            [COMMANDS.RIGHT]: 0,
+            [COMMANDS.DOWN]: 0,
+            [COMMANDS.UP]: 0
+        }
+
+        directions.forEach(x => {
+            if (x.element === ELEMENT.GOLD) {
+                foodDir[x.command] += 6 / (x.distance * x.distance);
+            } else if (x.element === ELEMENT.APPLE) {
+                foodDir[x.command] += 2 / (x.distance * x.distance);
+            } else if (x.element === ELEMENT.FURY_PILL) {
+                foodDir[x.command] += 4 / (x.distance * x.distance);
+            } else if (isEnemyHead(x.element)) {
+                foodDir[x.command] += 3 / (x.distance * x.distance);
+            }
+        });
+        logger(JSON.stringify(foodDir));
+
+        var nextCommand = 'NONE';
+        var nextWeight = 0;
+
+        Object.keys(foodDir).forEach(cmnd => {
+            if (nextWeight < foodDir[cmnd]) {
+                nextWeight = foodDir[cmnd];
+                nextCommand = cmnd;
+            }
+        })
+        if (nextWeight === 0) {
+            logger('no goods, avoid walls');
+
+            nextCommand = currentState.player.nextSteps[0] || 'ACT';
+
+        }
+        return ACT + nextCommand;
+    }
 }
-exports.getNextSnakeMove = getNextSnakeMove;
 
-function getMax(a, b) {
-    return a[SCORE] > b[SCORE] ? a : b;
-}
-function getMin(a, b) {
-    return a[SCORE] < b[SCORE] ? a : b;
-}
 
-/**
- *
- * @param {number} depth
- * @param {State} state
- * @param {number} alpha
- * @param {number} boardSize
- * @param {number} beta
- * @param {number} score
- * @returns {[string, number, string]}
- */
-function minimax(depth, state, boardSize, alpha, beta, score) {
-    minimaxCounter++;
-    if (depth < 1 || minimaxCounter > 1000000) {
-        return [COMMANDS.RIGHT, score, 'END'];
-    } else if (!state.player.isDead) {
-        var betterChoice = [COMMANDS.RIGHT, -Infinity, 'DEFAULT']
+function getDirections(board, headPosition, selfSize, rateElement, findFloor = false, countOnEnemyHeads = true, mode = 'normal', skipAhead = true) {
+    const directions = [];
+    const boardSize = getBoardSize(board);
 
-        for (var playerActionIDX = state.player.nextSteps.length - 1; playerActionIDX >= 0; --playerActionIDX) {
-            var playerAction = state.player.nextSteps[playerActionIDX];
-            var enemiesCount = state.enemies.length;
+    for (let x = 0; x < boardSize; x++) {
+        for (let y = 0; y < boardSize; y++) {
 
-            if (true) {
-                var result = evaluateMove(state, playerAction, [], depth, boardSize, alpha, beta, score);
-                if (alpha < result[SCORE]) {
-                    return result;
-                }
-                betterChoice = getMax(betterChoice, result);
-            } else if (enemiesCount === 1) {
-                var enemy1Steps = state.enemies[0].nextSteps;
-                for (var enemyStepIdx1 = enemy1Steps.length - 1; enemyStepIdx1 >= 0; enemyStepIdx1--) {
-                    var enemyAction1 = enemy1Steps[enemyStepIdx1];
+            var element = getAt(board, x, y);
 
-                    var result = evaluateMove(state, playerAction, [enemyAction1], depth, boardSize, alpha, beta, score);
-                    if (alpha < result[SCORE]) {
-                        return result;
-                    }
-                    betterChoice = getMax(betterChoice, result);
-
-                }
-            } else if (enemiesCount === 2) {
-                var enemy1Steps = state.enemies[0].nextSteps;
-                for (var enemyStepIdx1 = enemy1Steps.length - 1; enemyStepIdx1 >= 0; enemyStepIdx1--) {
-                    var enemyAction1 = enemy1Steps[enemyStepIdx1];
-
-                    var enemy2Steps = state.enemies[1].nextSteps;
-                    for (var enemyStepIdx2 = enemy2Steps.length - 1; enemyStepIdx2 >= 0; enemyStepIdx2--) {
-                        var enemyAction2 = enemy2Steps[enemyStepIdx2];
-
-                        var result = evaluateMove(state, playerAction, [enemyAction1, enemyAction2], depth, boardSize, alpha, beta, score);
-                        if (alpha < result[SCORE]) {
-                            return result;
-                        }
-                        betterChoice = getMax(betterChoice, result);
-                    }
-
-                }
-            } else if (enemiesCount === 3) {
-                var enemy1Steps = state.enemies[0].nextSteps;enemiesCount
-                for (var enemyStepIdx1 = enemy1Steps.length - 1; enemyStepIdx1 >= 0; enemyStepIdx1--) {
-                    var enemyAction1 = enemy1Steps[enemyStepIdx1];
-
-                    var enemy2Steps = state.enemies[1].nextSteps;
-                    for (var enemyStepIdx2 = enemy2Steps.length - 1; enemyStepIdx2 >= 0; enemyStepIdx2--) {
-                        var enemyAction2 = enemy2Steps[enemyStepIdx2];
-
-                        var enemy3Steps = state.enemies[2].nextSteps;
-                        for (var enemyStepIdx3 = enemy3Steps.length - 1; enemyStepIdx3 >= 0; enemyStepIdx3--) {
-                            var enemyAction3 = enemy3Steps[enemyStepIdx3];
-
-                            var result = evaluateMove(state, playerAction, [enemyAction1, enemyAction2, enemyAction3], depth, boardSize, alpha, beta, score);
-                            if (alpha < result[SCORE]) {
-                                return result;
+            if (rateElement(element, mode) > 0) {
+                const filteredBoard = board.split('').map(x => {
+                    if (
+                        x === ELEMENT.WALL ||
+                        x === ELEMENT.ENEMY_TAIL_INACTIVE ||
+                        x === ELEMENT.ENEMY_HEAD_DEAD ||
+                        (x === ELEMENT.START_FLOOR && !findFloor) ||
+                        x === ELEMENT.ENEMY_HEAD_SLEEP
+                    ) {
+                        return 1;
+                    } else if (x === ELEMENT.NONE) {
+                        return 0;
+                    } else if (isEnemy(x)) {
+                        if (mode === 'normal') {
+                            return 1;
+                        } else if (mode === 'evil') {
+                            if (ENEMY_TAIL.indexOf(x) > -1) {
+                                return 1;
+                            } else {
+                                return 0;
                             }
-                            betterChoice = getMax(betterChoice, result);
+                        } else {
+                            return 0;
+                        }
+                    } else if (x === ELEMENT.STONE && mode === 'normal' && selfSize < EATING_STONE_SIZE + 1) {
+                        return 1;
+                    } else if (isSelf(x)) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                }).join('');
 
+                const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
+
+                if (element === ELEMENT.ENEMY_HEAD_EVIL || (countOnEnemyHeads && isEnemyHead(element))) {
+                    boardClone[y + 1][x] = 1;
+                    boardClone[y - 1][x] = 1;
+                    boardClone[y][x + 1] = 1;
+                    boardClone[y][x - 1] = 1;
+                    //console.log('count');
+                }
+
+                // if (!findFloor && !skipAhead && isEnemyHead(element)) {
+                //     const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
+                //     [1, 2, 3].forEach(ahead => {
+                //         const currentHeadPos = multPositions(DIRECTION[headDirection], ahead);
+                //         const [nextMoveX, nextMoveY] = sumPositions([x, y], currentHeadPos);
+
+                //         if (boardClone[nextMoveY] && boardClone[nextMoveY][nextMoveX] === 0) {
+                //             var headPath = getPaths(boardClone, headPosition, nextMoveX, nextMoveY);
+
+                //             if (headPath && headPath.length > 1 && !isDeadEnd(board, x, y, headPath)) {
+
+                //                 //headPath.shift();
+                //                 const [nextX, nextY] = headPath[1];
+
+
+                //                 directions.push({
+                //                     element: element,
+                //                     ahead: ahead,
+                //                     distance: headPath.length - 1,
+                //                     command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
+                //                 });
+                //             }
+                //         }
+                //     });
+                // }
+                const path = getPaths(boardClone, headPosition, x, y);
+                if (path && path.length > 1) {
+                    // logger(`path length: ${path.length}`);
+                    //path.shift();
+                    const [nextX, nextY] = path[1];
+
+                    if (findFloor || !isDeadEnd(board, x, y, path)) {
+                        if (element === ELEMENT.FURY_PILL && path.length >= 7) {
+                            const stones = getDirections(board, ({ x, y }), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
+
+                            if ((stones && stones.length && stones[0].distance < 8)) {
+                                //console.log('see firy pill');
+                                directions.push({
+                                    element: element,
+                                    distance: path.length - 1,
+                                    command: getCoomandByCoord(headPosition[X], headPosition[Y], nextX, nextY)
+                                });
+                            }
+                        } else if (!findFloor && (element === ELEMENT.APPLE || element === ELEMENT.GOLD || element === ELEMENT.FURY_PILL)) {
+                            const enemies = getDirections(board, ({ x, y }), +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil', true);
+
+                            if (!enemies || !enemies.length || enemies[0].distance > 2) {
+                                directions.push({
+                                    element: element,
+                                    distance: path.length - 1,
+                                    command: getCoomandByCoord(headPosition[X], headPosition[Y], nextX, nextY)
+                                });
+                            }
+                        } else {
+                            directions.push({
+                                element: element,
+                                distance: path.length - 1,
+                                command: getCoomandByCoord(headPosition[X], headPosition[Y], nextX, nextY)
+                            });
                         }
                     }
 
-                }
-            } else if (enemiesCount === 4) {
-                var enemy1Steps = state.enemies[0].nextSteps;
-                for (var enemyStepIdx1 = enemy1Steps.length - 1; enemyStepIdx1 >= 0; enemyStepIdx1--) {
-                    var enemyAction1 = enemy1Steps[enemyStepIdx1];
-
-                    var enemy2Steps = state.enemies[1].nextSteps;
-                    for (var enemyStepIdx2 = enemy2Steps.length - 1; enemyStepIdx2 >= 0; enemyStepIdx2--) {
-                        var enemyAction2 = enemy2Steps[enemyStepIdx2];
-
-                        var enemy3Steps = state.enemies[2].nextSteps;
-                        for (var enemyStepIdx3 = enemy3Steps.length - 1; enemyStepIdx3 >= 0; enemyStepIdx3--) {
-                            var enemyAction3 = enemy3Steps[enemyStepIdx3];
-
-                            var enemy4Steps = state.enemies[3].nextSteps;
-                            for (var enemyStepIdx4 = enemy4Steps.length - 1; enemyStepIdx4 >= 0; enemyStepIdx4--) {
-                                var enemyAction4 = enemy4Steps[enemyStepIdx4];
-
-                                var result = evaluateMove(state, playerAction, [enemyAction1, enemyAction2, enemyAction3, enemyAction4], depth, boardSize, alpha, beta, score);
-                                if (alpha < result[SCORE]) {
-                                    return result;
-                                }
-                                betterChoice = getMax(betterChoice, result);
-
-                            }
-
-                        }
+                    if (findFloor && directions.length) {
+                        return directions;
                     }
                 }
             }
         }
-        return betterChoice;
+    }
+    directions.sort((a, b) => a.distance - b.distance);
+
+    return directions;
+}
+
+function getPaths(boardClone, headPosition, x, y) {
+    const grid = new PF.Grid(boardClone);
+    const finder = new PF.AStarFinder();
+    var path = finder.findPath(headPosition[X], headPosition[Y], x, y, grid);
+    return path;
+}
+
+function isDeadEnd(board, x, y, path) {
+    const arrayBoard = getBoardAsArray(board).map(x => x.split(''));
+    path.forEach(([x, y]) => {
+        arrayBoard[y][x] = ELEMENT.WALL;
+    });
+    arrayBoard[y][x] = 'X';
+    const strBoard = arrayBoard.map(x => x.join('')).join('');
+
+    var dir = getDirections(strBoard, { x, y }, +Infinity, (e) => e === ELEMENT.START_FLOOR, true)
+
+    return dir.length === 0;
+}
+function getCoomandByCoord(x, y, x2, y2) {
+    if (x < x2) {
+        return COMMANDS.RIGHT;
+    } else if (x > x2) {
+        return COMMANDS.LEFT;
+    } else if (y > y2) {
+        return COMMANDS.UP;
     } else {
-        return [COMMANDS.RIGHT, 0, 'NO Player'];
+        return COMMANDS.DOWN;
     }
 }
 
-/**
- *
- * @param {State} state
- * @param {string} playerAction
- * @param {string[]} enemyActions
- * @param {number} depth
- * @param {number} boardSize
- * @param {number} alpha
- * @param {number} beta
- * @param {number} score
- */
-function evaluateMove(state, playerAction, enemyActions, depth, boardSize, alpha, beta, score) {
-    var emulatedStep = state.step(playerAction, enemyActions);
 
-    score = score + emulatedStep.playerScore;
 
-    var emulatesLength = emulatedStep.enemiesScores.length;
-    for (var scoreIdx = 0; emulatesLength < scoreIdx; scoreIdx++) {
-        score = score + emulatedStep.enemiesScores[scoreIdx];
+function rateElement(element) {
+    if (element === ELEMENT.NONE) {
+        return 0;
+    } else if (element === ELEMENT.APPLE) {
+        return 20;
+    } else if (element === ELEMENT.WALL) {
+        return -11;
+    } else if (element === ELEMENT.GOLD) {
+        return 25;
+    } else if (
+        element === ELEMENT.FURY_PILL ||
+        element === ELEMENT.FLYING_PILL
+    ) {
+        return 2;
+    } else if (isEnemy(element)) {
+        return 2;
+    } else if (element === ELEMENT.STONE) {
+        return 3;
+    } else if (isSelf(element)) {
+        return -5;
     }
-    if (score < alpha && beta < score) {
-        var value = minimax(depth - 1, emulatedStep.state, boardSize, alpha, beta, score);
-        value[ANSWER] = playerAction;
-        value[SCORE] = value[SCORE] / 1.1;
-        return value;
-    } else {
-        return [playerAction, score, 'early hit'];
-    }
+
+    return -10;
 }
+
+
+exports.getNextSnakeMove = function (board, logger) {
+    var time = Date.now();
+    const res = getNextSnakeMoveInner(board, logger);
+    logger('turn time: ' + (Date.now() - time));
+    return res;
+};
 

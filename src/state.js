@@ -203,6 +203,12 @@ class Element {
          */
         this.type = type;
     }
+    getX() {
+        return this.pos[X];
+    }
+    getY() {
+        return this.pos[Y];
+    }
     /**
      * @returns {[number, number]}
      */

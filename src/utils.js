@@ -19,8 +19,8 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-var {
-    ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY, COMMANDS
+const {
+    ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS
 } = require('./constants');
 
 var X = 0;
@@ -62,6 +62,16 @@ function isSleep(board) {
     return board.indexOf(ELEMENT.HEAD_SLEEP) !== -1;
 }
 exports.isSleep = isSleep;
+
+function isEnemy(element) {
+    return ENEMY_ELEMENTS.indexOf(element) > -1;
+}
+exports.isEnemy = isEnemy;
+
+function isSelf(element) {
+    return SELF_ELEMENTS.indexOf(element) > -1;
+}
+exports.isSelf = isSelf
 
 /**
  *
