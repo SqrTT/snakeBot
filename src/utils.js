@@ -38,7 +38,7 @@ exports.getBoardAsString = getBoardAsString;
  * @param {string} board
  */
 function getBoardAsArray(board) {
-    var size = getBoardSize(board);
+    var size = Math.sqrt(board.length);
     /**
      * @type {string[]}
      */

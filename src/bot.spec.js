@@ -76,7 +76,25 @@ describe("bot", () => {
             expect(move).toEqual(COMMANDS.UP);
         });
 
-        fit("should not kill itself", () => {
+        it("should not kill itself", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼ ×──>   ☼' +
+                '☼╘══►    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should not kill itself", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
                 '☼        ☼' +
@@ -92,6 +110,15 @@ describe("bot", () => {
             //debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+
+        it("should not kill itself #2", () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼                           ☼☼#             ○             ☼☼☼       ●                   ☼☼☼                           ☼☼☼           ●     ○         ☼☼☼     ☼☼☼☼☼                 ☼☼☼     ☼              ●      ☼☼#     ☼☼☼        ☼☼☼☼#      ☼☼☼    $☼          ☼   ☼  ●   ☼☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼☼☼                ☼          ☼☼☼                ☼          ☼☼☼   ○●                      ☼☼#                           ☼☼☼                           ☼☼☼        ☼☼☼                ☼☼☼       ☼  ☼           ○    ☼☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼☼☼      ☼   ☼   ● ☼ ☼ ☼ ☼    ☼☼#      ☼   ☼     ☼  ☼  ☼    ☼☼☼   ●            ☼     ☼    ☼☼☼     ●          ☼     ☼    ☼☼☼                       ©   ☼☼☼                  ┌┐       ☼☼☼ ○    ○           ¤└┐      ☼☼#                   ●└─┐    ☼☼☼                      └> ▲ ☼☼☼                     ╘═══╝ ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼"
+            //æ──>
+           // debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.LEFT);
         });
 
         it("should attack enemy in fury", () => {
@@ -114,7 +141,6 @@ describe("bot", () => {
     })
 
     describe("getNextSnakeMove", () => {
-
 
         it("should define method", () => {
             expect(getNextSnakeMove).toBeDefined();
@@ -344,5 +370,40 @@ describe("bot", () => {
             const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         })
+        it("should strange case", () => {
+            const board =
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼                           ☼" +
+            "☼#                ®          ☼" +
+            "☼☼       ●      ○   ○        ☼" +
+            "☼☼        $                  ☼" +
+            "☼☼          ©●               ☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼                     ☼" +
+            "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼      ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼                ☼  ●       ☼" +
+            "☼☼      ○         ☼          ☼" +
+            "☼☼®                          ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼        ☼☼☼            ●   ☼" +
+            "☼☼       ☼○ ☼æ               ☼" +
+            "☼☼      ☼☼☼☼#˅    ☼☼   ☼#    ☼" +
+            "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼" +
+            "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼                ☼     ☼    ☼" +
+            "☼☼     ●          ☼    ○☼    ☼" +
+            "☼☼                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼ ○           ╔╕            ☼" +
+            "☼#             ╚╗            ☼" +
+            "☼☼              ▼            ☼" +
+            "☼☼              $         ©  ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.DOWN);
+        });
     });
 });

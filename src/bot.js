@@ -111,6 +111,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
                 return false;
             }
         })
+
         var res = AlphaBeta(16, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
        // debugger;
         logger(`attack score: ${res[1]} - ${res[0]}`);
@@ -173,7 +174,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             } else if (x.element === ELEMENT.FURY_PILL) {
                 foodDir[x.command] += 4 / (x.distance * x.distance);
             } else if (isEnemyHead(x.element)) {
-                foodDir[x.command] += 3 / (x.distance * x.distance);
+                foodDir[x.command] += 8 / (x.distance * x.distance);
             }
         });
         logger(JSON.stringify(foodDir));
@@ -192,6 +193,31 @@ function getNextSnakeMoveInner(board, logger, logState) {
             nextCommand = currentState.player.nextSteps[0] || COMMANDS.RIGHT;
 
         }
+
+        var nextPos = sum(DIRECTIONS_MAP[nextCommand], currentState.player.head.getPos())
+        var logObject = {
+            pathMatrix: pathMatrix,
+            tickNumber: turnsCount,
+            board: board,
+            snakeIsDead: false,
+            possibleTargets: directions.map(dir => ({
+                points: dir.distance,
+                element: {
+                    x: dir.pos[X],
+                    y: dir.pos[Y]
+                }
+            })),
+            selectedTarget: {
+                x: 0,
+                y: 0
+            },
+            nextPosition: {
+                x: nextPos[X],
+                y: nextPos[Y]
+            }
+        }
+
+        logState(sessionID, logObject);
         //writeLog(el);
         return ACT + nextCommand;
     }
