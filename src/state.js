@@ -770,7 +770,7 @@ class State {
                     var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
                     var elAtPos = getValAt(boardMatrix, nextPos);
 
-                    if (elAtPos !== ELEMENT.WALL && !snake.isNeck(nextPos)) {
+                    if (elAtPos !== ELEMENT.WALL && elAtPos !== ELEMENT.START_FLOOR && !snake.isNeck(nextPos)) {
                         snake.nextSteps.push(COMMANDS_LIST[dirs]);
                     }
                 }
@@ -852,7 +852,7 @@ class State {
                     var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
                     var elAtPos = getValAt(boardMatrix, nextPos);
 
-                    if (elAtPos !== ELEMENT.WALL && !snake.isNeck(nextPos)) {
+                    if (elAtPos !== ELEMENT.WALL && elAtPos !== ELEMENT.START_FLOOR && !snake.isNeck(nextPos)) {
                         snake.nextSteps.push(COMMANDS_LIST[dirs]);
                     }
                 }
