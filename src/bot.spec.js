@@ -1,6 +1,6 @@
 
 const {
-    getNextSnakeMove,
+    getNextSnakeMove, resetState
 } = require('./bot');
 const {
     COMMANDS
@@ -11,6 +11,9 @@ const mockLogger = (a) => {
 
 describe("bot", () => {
     describe('ENEMIES', () => {
+        beforeEach(() => {
+            resetState();
+        })
         it("should avoid enemy potential step", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
@@ -22,14 +25,38 @@ describe("bot", () => {
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).not.toEqual(COMMANDS.RIGHT);
         });
+        it("should attack enemy close path", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼  ╘══►  ☼' +
+                '☼×──>    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.DOWN);
+        });
+
         it("should attack enemy in fury", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
                 '#        ☼' +
                 '☼    ╘♥  ☼' +
                 '☼  ×──>  ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
+          //  debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.DOWN);
         });
@@ -154,6 +181,40 @@ describe("bot", () => {
                 '#    ☼' +
                 '☼☼☼☼☼☼';
             // debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should not cross itself", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼   ╔═►  ☼' +
+                '☼   ╚═══╕☼' +
+                '#     $  ☼' +
+                '☼        ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.DOWN);
+        });
+
+        it("should not cross itself if food is away", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#       $☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼  ╔═══╕ ☼' +
+                '☼  ╚═►   ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         });

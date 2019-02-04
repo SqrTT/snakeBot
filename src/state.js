@@ -282,6 +282,7 @@ class Snake {
         return false;
     }
 }
+exports.Snake = Snake;
 class State {
     constructor(player) {
         this.boardMatrix = undefined;
@@ -298,17 +299,115 @@ class State {
          */
         this.snakesElements = [];
     }
+    playerStep(playerAction) {
+        var newState = new State();
+        /**
+         * @type {number}
+         */
+        var playerScore = -Infinity;
+
+        /// move player
+        newState.player = this.player.move(playerAction, this.boardMatrix);
+        newState.enemies = this.enemies;
+        newState.boardMatrix = this.boardMatrix;
+
+        // player score
+        var mode = 'NORMAL';
+        if (this.player.furyCount > 0) {
+            mode = 'EVIL';
+        } else if (this.player.flyCount) {
+            mode = 'FLY';
+        }
+        var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
+        if (elAtPos === ELEMENT.NONE) {
+            for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                var snakeEl = newState.snakesElements[snakeElIds];
+
+                if (isSamePos(snakeEl.pos, newState.player.head.pos)) {
+                    playerScore = EVALUATION_MAP[mode][snakeEl.type];
+                    break;
+                }
+            }
+            if (snakeElIds === -1) {
+                playerScore = EVALUATION_MAP[mode][elAtPos];;
+            }
+        } else {// check other els
+            playerScore = EVALUATION_MAP[mode][elAtPos];
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        }
+        return {
+            playerScore,
+            newState
+        }
+    }
+    enemyStep(action, enemyID) {
+        /**
+         * @type {number}
+         */
+        var enemyScore = -Infinity;
+        var newState = new State();
+
+        newState.player = this.player;
+        var enemiesLength = this.enemies.length;
+        newState.enemies.length = enemiesLength;
+        for (var enemyIDX = 0; enemyIDX < enemiesLength; enemyIDX++) {
+            var enemyIn = this.enemies[enemyIDX];
+
+            if (action && enemyIDX === enemyID) {
+                newState.enemies[enemyIDX] = enemyIn.move(action, this.boardMatrix);
+            } else {
+                newState.enemies[enemyIDX] = this.enemies[enemyIDX];
+            }
+        }
+        newState.boardMatrix = this.boardMatrix;
+
+        newState.enemies.length = enemiesLength;
+        for (var enemyIDX = 0; enemyIDX < enemiesLength; enemyIDX++) {
+            var enemy = newState.enemies[enemyIDX];
+            if (enemyID !== enemyIDX) {
+                continue;
+            }
+
+            var mode = 'NORMAL';
+            if (enemy.furyCount > 0) {
+                mode = 'EVIL';
+            } else if (enemy.flyCount) {
+                mode = 'FLY';
+            }
+            var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
+            if (elAtPos === ELEMENT.NONE) {
+                for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                    var snakeEl = newState.snakesElements[snakeElIds];
+
+                    if (isSamePos(snakeEl.pos, enemy.head.pos)) {
+                        enemyScore = -EVALUATION_MAP[mode][snakeEl.type];
+                        break;
+                    }
+                }
+                if (snakeElIds === -1) {
+                    enemyScore = -EVALUATION_MAP[mode][elAtPos], elAtPos;
+                }
+            } else {// check other els
+                enemyScore = -EVALUATION_MAP[mode][elAtPos], elAtPos;
+                newState.boardMatrix = setValAt(newState.boardMatrix, enemy.head.pos, ELEMENT.NONE);
+            }
+        }
+
+        return {
+            enemiesScore: enemyScore,
+            newState
+        };
+    }
     /**
      *
      * @param {string} playerAction
-     * @param {string[]} actions
+     * @param {string} action
      */
-    step(playerAction, actions) {
+    step(playerAction, action, enemyID) {
         /**
-         * @type {number[]}
+         * @type {number}
          */
-        var enemiesScores = [];
-        enemiesScores.length = actions.length;
+        var enemiesScore = -Infinity;
         var newState = new State();
         /**
          * @type {number}
@@ -320,10 +419,10 @@ class State {
         var enemiesLength = this.enemies.length;
         newState.enemies.length = enemiesLength;
         for (var enemyIDX = 0; enemyIDX < enemiesLength; enemyIDX++) {
-            var enemy = this.enemies[enemyIDX];
-            var enemyAction = actions[enemyIDX];
-            if (enemyAction) {
-                newState.enemies[enemyIDX] = enemy.move(enemyAction, this.boardMatrix);
+            var enemyIn = this.enemies[enemyIDX];
+
+            if (action && enemyIDX === enemyID) {
+                newState.enemies[enemyIDX] = enemyIn.move(action, this.boardMatrix);
             } else {
                 newState.enemies[enemyIDX] = this.enemies[enemyIDX];
             }
@@ -337,10 +436,10 @@ class State {
         } else if (this.player.flyCount) {
             mode = 'FLY';
         }
-        var elAtPos = getValAt(this.boardMatrix, newState.player.head.pos);
+        var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
         if (elAtPos === ELEMENT.NONE) {
-            for (var snakeElIds = this.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
-                var snakeEl = this.snakesElements[snakeElIds];
+            for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                var snakeEl = newState.snakesElements[snakeElIds];
 
                 if (isSamePos(snakeEl.pos, newState.player.head.pos)) {
                     playerScore = EVALUATION_MAP[mode][snakeEl.type];
@@ -358,7 +457,9 @@ class State {
         newState.enemies.length = enemiesLength;
         for (var enemyIDX = 0; enemyIDX < enemiesLength; enemyIDX++) {
             var enemy = newState.enemies[enemyIDX];
-            var enemyAction = actions[enemyIDX];
+            if (enemyID !== enemyIDX) {
+                continue;
+            }
 
             var mode = 'NORMAL';
             if (enemy.furyCount > 0) {
@@ -368,26 +469,26 @@ class State {
             }
             var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
             if (elAtPos === ELEMENT.NONE) {
-                for (var snakeElIds = this.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
-                    var snakeEl = this.snakesElements[snakeElIds];
+                for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                    var snakeEl = newState.snakesElements[snakeElIds];
 
                     if (isSamePos(snakeEl.pos, enemy.head.pos)) {
-                        enemiesScores[enemyIDX] = -EVALUATION_MAP[mode][snakeEl.type];
+                        enemiesScore = -EVALUATION_MAP[mode][snakeEl.type];
                         break;
                     }
                 }
                 if (snakeElIds === -1) {
-                    enemiesScores[enemyIDX] = -EVALUATION_MAP[mode][elAtPos], elAtPos;
+                    enemiesScore = -EVALUATION_MAP[mode][elAtPos], elAtPos;
                 }
             } else {// check other els
-                enemiesScores[enemyIDX] = -EVALUATION_MAP[mode][elAtPos], elAtPos;
+                enemiesScore = -EVALUATION_MAP[mode][elAtPos], elAtPos;
                 newState.boardMatrix = setValAt(newState.boardMatrix, enemy.head.pos, ELEMENT.NONE);
             }
         }
 
         return {
             playerScore,
-            enemiesScores,
+            enemiesScore,
             state: newState
         };
     }
@@ -432,21 +533,50 @@ class State {
                             var newEl = new Element(currentPos, elAtPos, snake);
                             snake.elements.push(newEl);
                             state.snakesElements.push(newEl);
+                            snake.head = snake.elements[snake.elements.length - 1];
 
-                            if (elAtPos === ELEMENT.HEAD_FLY) {
-                                snake.flyCount = 1;
-                            } else if (elAtPos === ELEMENT.HEAD_EVIL) {
-                                snake.furyCount = 1;
-                            } else if (elAtPos === ELEMENT.HEAD_SLEEP || elAtPos === ELEMENT.HEAD_DEAD) {
+                            if (prevState.player) {
+                                if (prevState.player.flyCount > 0) {
+                                    snake.flyCount = prevState.player.flyCount;
+                                }
+                                if (prevState.player.furyCount > 0) {
+                                    snake.furyCount = prevState.player.furyCount;
+                                }
+                            }
+                            if (prevState.boardMatrix) {
+                                var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
+
+                                if (prevEl === ELEMENT.HEAD_FLY) {
+                                    snake.flyCount = 11;
+                                } else if (prevEl === ELEMENT.FURY_PILL) {
+                                    snake.furyCount = 11;
+                                }
+                            } else {
+                                if (elAtPos === ELEMENT.HEAD_FLY) {
+                                    snake.flyCount = 2;
+                                } else if (elAtPos === ELEMENT.HEAD_EVIL) {
+                                    snake.furyCount = 2;
+                                }
+                            }
+                            if (elAtPos === ELEMENT.HEAD_SLEEP || elAtPos === ELEMENT.HEAD_DEAD) {
                                 snake.isDead = true;
                             }
+                            if (snake.flyCount > 0) {
+                                snake.flyCount--;
+                            }
+                            if (snake.furyCount > 0) {
+                                snake.furyCount--;
+                            }
+
                             setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
                             break;
                         }
                     }
 
                 } while (isEnd > 0);
-                snake.head = snake.elements[snake.elements.length - 1];
+                if (!snake.head) {
+                    snake.head = snake.elements[snake.elements.length - 1];
+                }
                 for (var dirs = COMMANDS_LIST.length - 1; dirs >= 0; --dirs) {
                     var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
                     var elAtPos = getValAt(boardMatrix, nextPos);

@@ -3,11 +3,12 @@ const { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP, ENEMY_HEAD, ENEMY_TAIL
 const {
     isGameOver, getHeadPosition, getBoardSize, getElementByXY, getBoardAsArray, findElementPos, sum, isEnemyHead, isEnemyBody, getAt, isSleep, isSelf, isEnemy
 } = require('./utils');
+const { AlphaBeta } = require('./minimax');
+
 var { State, getValAt } = require('./state');
 var PF = require('pathfinding');
 const EATING_STONE_SIZE = 6;
 let turnsCount = 0;
-let stayOnTheWayCount = 0;
 
 
 const X = 0,
@@ -75,14 +76,14 @@ function getNextSnakeMoveInner(board, logger, logState) {
     }
 
 
-    logger(`turn: ${turnsCount} x:${currentState.player.head.pos[0]} y: ${currentState.player.head.pos[1]} evil: ${currentState.player.flyCount} fly: ${currentState.player.flyCount}`);
+    logger(`turn: ${turnsCount} x:${currentState.player.head.pos[0]} y: ${currentState.player.head.pos[1]} evil: ${currentState.player.furyCount} fly: ${currentState.player.flyCount}`);
     var selfSize = currentState.player.elements.length;
     var enemiesCount = currentState.enemies.length;
     var enemiesSize = 0;
 
     var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
     logger(`Size: ${selfSize}`);
-    logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
+    //logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
 
     var mode = 'normal';
     if (currentState.player.flyCount > 0) {
@@ -98,8 +99,28 @@ function getNextSnakeMoveInner(board, logger, logState) {
     var ACT = mode === 'evil' ? 'ACT,' : '';
 
     /// attack
+    if ((el = directions.find(x => isEnemyHead(x.element) && x.distance < 8))) {
+        logger('>>> attack mode <<<\n ' + el.distance);
+        var enIdx = 0;
 
-    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount + 1))) {
+        currentState.enemies.some((en, idx) => {
+            if (en.isSelf(el.pos)) {
+                enIdx = idx;
+                return true;
+            } else {
+                return false;
+            }
+        })
+        var res = AlphaBeta(16, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+       // debugger;
+        logger(`attack score: ${res[1]} - ${res[0]}`);
+        writeLog(el)
+        if (res[0] !== 'NO') {
+            return res[0];
+        }
+
+    }
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount))) {
         logger('fury stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -160,7 +181,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         var nextCommand = 'NONE';
         var nextWeight = 0;
 
-        Object.keys(foodDir).forEach(cmnd => {
+        currentState.player.nextSteps.forEach(cmnd => {
             if (nextWeight < foodDir[cmnd]) {
                 nextWeight = foodDir[cmnd];
                 nextCommand = cmnd;
@@ -168,7 +189,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         })
         if (nextWeight === 0) {
             logger('no goods, avoid walls');
-            nextCommand = currentState.player.nextSteps[0] || 'ACT';
+            nextCommand = currentState.player.nextSteps[0] || COMMANDS.RIGHT;
 
         }
         //writeLog(el);
@@ -181,56 +202,52 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
     const directions = [];
     const boardSize = getBoardSize(board);
 
+    const filteredBoard = board.split('').map(x => {
+        if (
+            x === ELEMENT.WALL ||
+            x === ELEMENT.ENEMY_TAIL_INACTIVE ||
+            x === ELEMENT.ENEMY_HEAD_DEAD ||
+            (x === ELEMENT.START_FLOOR && !findFloor) ||
+            x === ELEMENT.ENEMY_HEAD_SLEEP
+        ) {
+            return 1;
+        } else if (x === ELEMENT.NONE) {
+            return 0;
+        } else if (isEnemyHead(x)) {
+            return 0;
+        } else if (isEnemy(x)) {
+            if (mode === 'normal') {
+                return 1;
+            } else if (mode === 'evil') {
+                if (ENEMY_TAIL.indexOf(x) > -1) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            } else {
+                return 0;
+            }
+        } else if (x === ELEMENT.STONE && mode === 'normal' && selfSize < EATING_STONE_SIZE + 1) {
+            return 1;
+        } else if (isSelf(x)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }).join('');
+
+    const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
+
+    if (!pathMatrix) {
+        pathMatrix = boardClone;
+    }
+
     for (let x = 0; x < boardSize; x++) {
         for (let y = 0; y < boardSize; y++) {
 
             var element = getAt(board, x, y);
 
             if (rateElement(element, mode) > 0) {
-                const filteredBoard = board.split('').map(x => {
-                    if (
-                        x === ELEMENT.WALL ||
-                        x === ELEMENT.ENEMY_TAIL_INACTIVE ||
-                        x === ELEMENT.ENEMY_HEAD_DEAD ||
-                        (x === ELEMENT.START_FLOOR && !findFloor) ||
-                        x === ELEMENT.ENEMY_HEAD_SLEEP
-                    ) {
-                        return 1;
-                    } else if (x === ELEMENT.NONE) {
-                        return 0;
-                    } else if (isEnemy(x)) {
-                        if (mode === 'normal') {
-                            return 1;
-                        } else if (mode === 'evil') {
-                            if (ENEMY_TAIL.indexOf(x) > -1) {
-                                return 1;
-                            } else {
-                                return 0;
-                            }
-                        } else {
-                            return 0;
-                        }
-                    } else if (x === ELEMENT.STONE && mode === 'normal' && selfSize < EATING_STONE_SIZE + 1) {
-                        return 1;
-                    } else if (isSelf(x)) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                }).join('');
-
-                const boardClone = getBoardAsArray(filteredBoard).map(x => x.split('').map(Number));
-
-                if (element === ELEMENT.ENEMY_HEAD_EVIL || (countOnEnemyHeads && isEnemyHead(element))) {
-                    boardClone[y + 1][x] = 1;
-                    boardClone[y - 1][x] = 1;
-                    boardClone[y][x + 1] = 1;
-                    boardClone[y][x - 1] = 1;
-                    //console.log('count');
-                }
-                if (!pathMatrix) {
-                    pathMatrix = boardClone;
-                }
 
                 // if (!findFloor && !skipAhead && isEnemyHead(element)) {
                 //     const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
@@ -368,10 +385,11 @@ function rateElement(element) {
 }
 
 
-exports.getNextSnakeMove = function (board, logger, logState) {
+exports.getNextSnakeMove = function (board, logger, logState = () => { }) {
     var time = Date.now();
     const res = getNextSnakeMoveInner(board, logger, logState);
     logger('turn time: ' + (Date.now() - time));
     return res;
 };
+exports.resetState = () => {lastState = undefined}
 

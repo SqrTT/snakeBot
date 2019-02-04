@@ -117,7 +117,7 @@ module.exports = {
   // resetMocks: false,
 
   // Reset the module registry before running each individual test
-  // resetModules: false,
+   resetModules: true,
 
   // A path to a custom resolver
   // resolver: null,

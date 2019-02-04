@@ -135,10 +135,7 @@ function printLog(text) {
     if (addToEnd.checked) {
         textarea.value = textarea.value + "\n" + text;
     } else {
-        var content = text + "\n" + textarea.value;
-        if (content.length > 100000) {
-            content = content.substr(0, 100000);
-        }
+        var content = text + "\n"
         textarea.value = content;
     }
 }
