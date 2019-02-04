@@ -38,9 +38,60 @@ describe("bot", () => {
                 '☼×──>    ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
-            debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.DOWN);
+        });
+
+        it("should attack enemy close path #2", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼  ╘══►  ☼' +
+                '☼        ☼' +
+                '☼×──>    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.DOWN);
+        });
+
+        it("should keep away form evil enemy", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼╘══►    ☼' +
+                '☼ ×──♣   ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.UP);
+        });
+
+        fit("should not kill itself", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼ ×──♣   ☼' +
+                '☼╘══►    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
         });
 
         it("should attack enemy in fury", () => {

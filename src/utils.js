@@ -20,7 +20,7 @@
  * #L%
  */
 const {
-    ELEMENT, ENEMY_NORMAL_HEAD, ENEMY_BODY, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS
+    ELEMENT, ENEMY_HEAD, ENEMY_BODY, COMMANDS, ENEMY_ELEMENTS, SELF_ELEMENTS
 } = require('./constants');
 
 var X = 0;
@@ -158,7 +158,7 @@ exports.isSamePos = isSamePos;
 
 
 function isEnemyHead(e) {
-    return ENEMY_NORMAL_HEAD.indexOf(e) !== -1;
+    return ENEMY_HEAD.indexOf(e) !== -1;
 }
 exports.isEnemyHead = isEnemyHead;
 

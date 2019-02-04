@@ -248,7 +248,6 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
             var element = getAt(board, x, y);
 
             if (rateElement(element, mode) > 0) {
-
                 // if (!findFloor && !skipAhead && isEnemyHead(element)) {
                 //     const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
                 //     [1, 2, 3].forEach(ahead => {
@@ -274,15 +273,15 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                 //         }
                 //     });
                 // }
-                const path = getPaths(boardClone, headPosition, x, y);
+                var path = getPaths(boardClone, headPosition, x, y);
                 if (path && path.length > 1) {
                     // logger(`path length: ${path.length}`);
                     //path.shift();
-                    const [nextX, nextY] = path[1];
+                    var [nextX, nextY] = path[1];
 
                     if (findFloor || isEnemyHead(element) || !isDeadEnd(board, elementPos, path)) {
                         if (element === ELEMENT.FURY_PILL && path.length >= 7) {
-                            const stones = getDirections(board, elementPos, +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
+                            var stones = getDirections(board, elementPos, +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
 
                             if ((stones && stones.length && stones[0].distance < 8)) {
                                 directions.push({
@@ -293,7 +292,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                                 });
                             }
                         } else if (!findFloor && (element === ELEMENT.APPLE || element === ELEMENT.GOLD || element === ELEMENT.FURY_PILL)) {
-                            const enemies = getDirections(board, elementPos, +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil');
+                            var enemies = getDirections(board, elementPos, +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil');
 
                             if (!enemies || !enemies.length || enemies[0].distance > 2) {
                                 directions.push({
@@ -372,7 +371,7 @@ function rateElement(element) {
         element === ELEMENT.FLYING_PILL
     ) {
         return 2;
-    } else if (isEnemy(element)) {
+    } else if (isEnemyHead(element)) {
         return 2;
     } else if (element === ELEMENT.STONE) {
         return 3;
