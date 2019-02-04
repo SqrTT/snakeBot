@@ -44,7 +44,7 @@ describe("State", () => {
 
             expect(enemyState.enemiesScore).toEqual(50);
         });
-        fit("should prevent step on enemy", () => {
+        it("should prevent step on enemy", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
                 '☼        ☼' +
@@ -61,6 +61,63 @@ describe("State", () => {
             var res = state.playerStep(COMMANDS.UP);
 
             expect(res.playerScore).toEqual(0);
+        });
+        it("should prevent step on enemy", () => {
+
+            const board =
+            '☼☼☼☼☼☼☼☼☼☼' +
+            '#        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼  ×──>  ☼' +
+            '☼   ╘══► ☼' +
+            '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            var state = State.getState(board);
+            var res = state.enemyStep(COMMANDS.DOWN, 0);
+
+            expect(res.enemiesScore).toEqual(-50);
+        });
+        it("should find head correctly", () => {
+            const board =
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼                           ☼" +
+            "☼#                ®          ☼" +
+            "☼☼       ●      ○   ○        ☼" +
+            "☼☼        $                  ☼" +
+            "☼☼          ©●               ☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼                     ☼" +
+            "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼      ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼                ☼  ●       ☼" +
+            "☼☼      ○         ☼          ☼" +
+            "☼☼®                          ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼        ☼☼☼            ●   ☼" +
+            "☼☼       ☼○ ☼æ               ☼" +
+            "☼☼      ☼☼☼☼#˅    ☼☼   ☼#    ☼" +
+            "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼" +
+            "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼                ☼     ☼    ☼" +
+            "☼☼     ●          ☼    ○☼    ☼" +
+            "☼☼                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼ ○           ╔╕            ☼" +
+            "☼#             ╚╗            ☼" +
+            "☼☼              ▼            ☼" +
+            "☼☼              $         ©  ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+            var state = State.getState(board);
+            expect(state.player.elements.length).toEqual(5);
         });
 
     });
