@@ -111,9 +111,9 @@ function getNextSnakeMoveInner(board, logger, logState) {
                 return false;
             }
         })
-
-        var res = AlphaBeta(16, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
        // debugger;
+        var res = AlphaBeta(10, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+
         logger(`attack score: ${res[1]} - ${res[0]}`);
         writeLog(el)
         if (res[0] !== 'NO') {

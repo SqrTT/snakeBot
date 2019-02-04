@@ -6,6 +6,7 @@ const X = 0,
 
 var EVALUATION_MAP = {
     NORMAL: {
+
         [ELEMENT.NONE]: 0,
         [ELEMENT.WALL]: -50,
         [ELEMENT.START_FLOOR]: -50,
@@ -27,7 +28,15 @@ var EVALUATION_MAP = {
         [ELEMENT.BODY_LEFT_UP]: -50,
         [ELEMENT.BODY_RIGHT_DOWN]: -50,
         [ELEMENT.BODY_RIGHT_UP]: -50,
-
+        // игрок
+        [ELEMENT.HEAD_DOWN]: -50,
+        [ELEMENT.HEAD_LEFT]: -50,
+        [ELEMENT.HEAD_RIGHT]: -50,
+        [ELEMENT.HEAD_UP]: -50,
+        [ELEMENT.HEAD_DEAD]: -50,
+        [ELEMENT.HEAD_EVIL]: -50,
+        [ELEMENT.HEAD_FLY]: -50,
+        [ELEMENT.HEAD_SLEEP]: -50,
         [ELEMENT.ENEMY_HEAD_DOWN]: -50,
         [ELEMENT.ENEMY_HEAD_LEFT]: -50,
         [ELEMENT.ENEMY_HEAD_RIGHT]: -50,
@@ -70,7 +79,15 @@ var EVALUATION_MAP = {
         [ELEMENT.BODY_LEFT_UP]: -50,
         [ELEMENT.BODY_RIGHT_DOWN]: -50,
         [ELEMENT.BODY_RIGHT_UP]: -50,
-
+        // игрок
+        [ELEMENT.HEAD_DOWN]: -50,
+        [ELEMENT.HEAD_LEFT]: -50,
+        [ELEMENT.HEAD_RIGHT]: -50,
+        [ELEMENT.HEAD_UP]: -50,
+        [ELEMENT.HEAD_DEAD]: -50,
+        [ELEMENT.HEAD_EVIL]: -50,
+        [ELEMENT.HEAD_FLY]: -50,
+        [ELEMENT.HEAD_SLEEP]: -50,
         [ELEMENT.ENEMY_HEAD_DOWN]: 51,
         [ELEMENT.ENEMY_HEAD_LEFT]: 51,
         [ELEMENT.ENEMY_HEAD_RIGHT]: 51,
@@ -113,7 +130,15 @@ var EVALUATION_MAP = {
         [ELEMENT.BODY_LEFT_UP]: 0,
         [ELEMENT.BODY_RIGHT_DOWN]: 0,
         [ELEMENT.BODY_RIGHT_UP]: 0,
-
+        // игрок
+        [ELEMENT.HEAD_DOWN]: 0,
+        [ELEMENT.HEAD_LEFT]: 0,
+        [ELEMENT.HEAD_RIGHT]: 0,
+        [ELEMENT.HEAD_UP]: 0,
+        [ELEMENT.HEAD_DEAD]: 0,
+        [ELEMENT.HEAD_EVIL]: 0,
+        [ELEMENT.HEAD_FLY]: 0,
+        [ELEMENT.HEAD_SLEEP]: 0,
         [ELEMENT.ENEMY_HEAD_DOWN]: 0,
         [ELEMENT.ENEMY_HEAD_LEFT]: 0,
         [ELEMENT.ENEMY_HEAD_RIGHT]: 0,
@@ -240,12 +265,12 @@ class Snake {
         var newSnake = new Snake();
 
 
-        var newHead = new Element(nextPos, ELEMENT.HEAD_UP, newSnake);
+        var newHead = new Element(nextPos, this.head.type, newSnake);
 
         newSnake.head = newHead;
 
         var elementsLength = this.elements.length;
-        for (var oldElementIdx = 1; oldElementIdx < elementsLength; oldElementIdx++) {
+        for (var oldElementIdx = 0; oldElementIdx < elementsLength - 1; oldElementIdx++) {
             var oldElement = this.elements[oldElementIdx];
             newSnake.elements.push(new Element(oldElement.getPos(), oldElement.type, newSnake));
         }
@@ -294,10 +319,15 @@ class State {
          * @type Snake[]
          */
         this.enemies = [];
-        /**
-         * @type Element[]
-         */
-        this.snakesElements = [];
+    }
+    getSnakesElements() {
+        var elements = [...this.player.elements];
+        var enemiesLength = this.enemies.length;
+        for (var enemyIDX = 0; enemyIDX < enemiesLength; enemyIDX++) {
+            var enemyIn = this.enemies[enemyIDX];
+            elements.push(...enemyIn.elements);
+        }
+        return elements;
     }
     playerStep(playerAction) {
         var newState = new State();
@@ -320,10 +350,11 @@ class State {
         }
         var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
         if (elAtPos === ELEMENT.NONE) {
-            for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
-                var snakeEl = newState.snakesElements[snakeElIds];
+            var snakesElements = newState.getSnakesElements();
+            for (var snakeElIds = snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                var snakeEl = snakesElements[snakeElIds];
 
-                if (isSamePos(snakeEl.pos, newState.player.head.pos)) {
+                if (isSamePos(snakeEl.pos, newState.player.head.pos) && newState.player !== snakeEl.owner) {
                     playerScore = EVALUATION_MAP[mode][snakeEl.type];
                     break;
                 }
@@ -376,10 +407,11 @@ class State {
             }
             var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
             if (elAtPos === ELEMENT.NONE) {
-                for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
-                    var snakeEl = newState.snakesElements[snakeElIds];
+                var snakesElements = newState.getSnakesElements();
+                for (var snakeElIds = snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                    var snakeEl = snakesElements[snakeElIds];
 
-                    if (isSamePos(snakeEl.pos, enemy.head.pos)) {
+                    if (isSamePos(snakeEl.pos, enemy.head.pos) && enemy !== snakeEl.owner) {
                         enemyScore = -EVALUATION_MAP[mode][snakeEl.type];
                         break;
                     }
@@ -438,8 +470,9 @@ class State {
         }
         var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
         if (elAtPos === ELEMENT.NONE) {
-            for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
-                var snakeEl = newState.snakesElements[snakeElIds];
+            var snakesElements = newState.getSnakesElements();
+            for (var snakeElIds = snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                var snakeEl = snakesElements[snakeElIds];
 
                 if (isSamePos(snakeEl.pos, newState.player.head.pos)) {
                     playerScore = EVALUATION_MAP[mode][snakeEl.type];
@@ -469,8 +502,9 @@ class State {
             }
             var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
             if (elAtPos === ELEMENT.NONE) {
-                for (var snakeElIds = newState.snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
-                    var snakeEl = newState.snakesElements[snakeElIds];
+                var snakesElements = newState.getSnakesElements();
+                for (var snakeElIds = snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
+                    var snakeEl = snakesElements[snakeElIds];
 
                     if (isSamePos(snakeEl.pos, enemy.head.pos)) {
                         enemiesScore = -EVALUATION_MAP[mode][snakeEl.type];
@@ -505,7 +539,6 @@ class State {
 
                 var newEl = new Element(pos, tailType, snake);
                 snake.elements.push(newEl);
-                state.snakesElements.push(newEl);
 
                 setValAtMut(boardMatrix, pos, ELEMENT.NONE);
                 // find snake body
@@ -520,7 +553,6 @@ class State {
                             currentPos = next;
                             var newEl = new Element(currentPos, elAtPos, snake);
                             snake.elements.push(newEl);
-                            state.snakesElements.push(newEl);
 
                             setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
 
@@ -532,7 +564,6 @@ class State {
                             currentPos = next;
                             var newEl = new Element(currentPos, elAtPos, snake);
                             snake.elements.push(newEl);
-                            state.snakesElements.push(newEl);
                             snake.head = snake.elements[snake.elements.length - 1];
 
                             if (prevState.player) {
@@ -546,7 +577,7 @@ class State {
                             if (prevState.boardMatrix) {
                                 var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
 
-                                if (prevEl === ELEMENT.HEAD_FLY) {
+                                if (prevEl === ELEMENT.FLYING_PILL) {
                                     snake.flyCount = 11;
                                 } else if (prevEl === ELEMENT.FURY_PILL) {
                                     snake.furyCount = 11;
@@ -602,7 +633,6 @@ class State {
 
                 var newEl = new Element(enemyPos, tailType, snake);
                 snake.elements.push(newEl);
-                state.snakesElements.push(newEl);
 
                 // find snake body
                 var isEnd = 100;
@@ -616,7 +646,6 @@ class State {
                             currentPos = next;
                             var newEl = new Element(currentPos, elAtPos, snake);
                             snake.elements.push(newEl);
-                            state.snakesElements.push(newEl);
                             setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
 
                             // bodyPart
@@ -626,17 +655,35 @@ class State {
                             // head
                             var newEl = new Element(currentPos, elAtPos, snake);
                             snake.elements.push(newEl);
-                            state.snakesElements.push(newEl);
+                            snake.head = snake.elements[snake.elements.length - 1];
 
                             setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
 
-                            if (elAtPos === ELEMENT.HEAD_FLY) {
-                                snake.flyCount = 1;
-                            } else if (elAtPos === ELEMENT.HEAD_EVIL) {
-                                snake.furyCount = 1;
-                            } else if (elAtPos === ELEMENT.HEAD_SLEEP || elAtPos === ELEMENT.HEAD_DEAD) {
+                            if (prevState.boardMatrix) {
+                                var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
+
+                                if (prevEl === ELEMENT.FLYING_PILL) {
+                                    snake.flyCount += 11;
+                                } else if (prevEl === ELEMENT.FURY_PILL) {
+                                    snake.furyCount += 11;
+                                }
+                            } else {
+                                if (elAtPos === ELEMENT.ENEMY_HEAD_FLY) {
+                                    snake.flyCount = 2;
+                                } else if (elAtPos === ELEMENT.ENEMY_HEAD_EVIL) {
+                                    snake.furyCount = 2;
+                                }
+                            }
+                            if (elAtPos === ELEMENT.ENEMY_HEAD_SLEEP || elAtPos === ELEMENT.ENEMY_HEAD_DEAD) {
                                 snake.isDead = true;
                             }
+                            if (snake.flyCount > 0) {
+                                snake.flyCount--;
+                            }
+                            if (snake.furyCount > 0) {
+                                snake.furyCount--;
+                            }
+
                             break;
                         }
                     }

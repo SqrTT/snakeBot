@@ -10,7 +10,7 @@ const ANSWER = 0,
 /**
  * @param {number} depth
  * @param {State} state
- * @param {numner} enemyIdx
+ * @param {number} enemyIdx
  *
  * @returns {[string, number]}
  */
@@ -23,7 +23,16 @@ function AlphaBeta(depth, isMax, state, enemyIdx, alpha, beta, scorePlayer, scor
 
         for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
             var emulationStep = state.playerStep(playerSteps[playerStepsIdx]);
-            var next = AlphaBeta(depth - 1, !isMax, emulationStep.newState, enemyIdx, alpha, beta, scorePlayer + emulationStep.playerScore, scoreEnemy);
+            var next = AlphaBeta(
+                depth - 1,
+                !isMax,
+                emulationStep.newState,
+                enemyIdx,
+                alpha,
+                beta,
+                (scorePlayer + emulationStep.playerScore) * depth / 42,
+                scoreEnemy
+            );
 
             if (next[SCORE] > alpha[SCORE]) {
                 alpha = [playerSteps[playerStepsIdx], next[SCORE]];
@@ -35,17 +44,29 @@ function AlphaBeta(depth, isMax, state, enemyIdx, alpha, beta, scorePlayer, scor
         }
         return alpha;
     } else {
-        var enemySteps = state.enemies[enemyIdx].nextSteps;
-        for (var enemyStepsIdx = enemySteps.length - 1; enemyStepsIdx >= 0; enemyStepsIdx--) {
-            var enemyEmulationStep = state.enemyStep(enemySteps[enemyStepsIdx], enemyIdx);
-            var next = AlphaBeta(depth - 1, !isMax, enemyEmulationStep.newState, enemyIdx, alpha, beta, scorePlayer, enemyEmulationStep.enemiesScore - scoreEnemy);
+        if (state.enemies && state.enemies.length) {
+            var enemySteps = state.enemies[enemyIdx].nextSteps;
 
-            if (next[SCORE] < beta[SCORE]) {
-                beta = [enemySteps[enemyStepsIdx], next[SCORE]];
-            }
+            for (var enemyStepsIdx = enemySteps.length - 1; enemyStepsIdx >= 0; enemyStepsIdx--) {
+                var enemyEmulationStep = state.enemyStep(enemySteps[enemyStepsIdx], enemyIdx);
+                var next = AlphaBeta(
+                    depth - 1,
+                    !isMax,
+                    enemyEmulationStep.newState,
+                    enemyIdx,
+                    alpha,
+                    beta,
+                    scorePlayer,
+                    (enemyEmulationStep.enemiesScore - scoreEnemy) * depth / 42
+                );
 
-            if (alpha[SCORE] >= beta[SCORE]) {
-                break;
+                if (next[SCORE] < beta[SCORE]) {
+                    beta = [enemySteps[enemyStepsIdx], next[SCORE]];
+                }
+
+                if (alpha[SCORE] >= beta[SCORE]) {
+                    break;
+                }
             }
         }
         return beta;
