@@ -99,7 +99,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
     var ACT = mode === 'evil' ? 'ACT,' : '';
 
     /// attack
-    if ((el = directions.find(x => isEnemyHead(x.element) && x.distance < 8))) {
+    if ((el = directions.find(x => isEnemyHead(x.element) && x.distance < 6))) {
         logger('>>> attack mode <<<\n ' + el.distance);
         var enIdx = 0;
 
@@ -244,7 +244,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
 
     for (let x = 0; x < boardSize; x++) {
         for (let y = 0; y < boardSize; y++) {
-
+            var elementPos = [x, y];
             var element = getAt(board, x, y);
 
             if (rateElement(element, mode) > 0) {
@@ -280,25 +280,24 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                     //path.shift();
                     const [nextX, nextY] = path[1];
 
-                    if (findFloor || !isDeadEnd(board, [x, y], path)) {
+                    if (findFloor || isEnemyHead(element) || !isDeadEnd(board, elementPos, path)) {
                         if (element === ELEMENT.FURY_PILL && path.length >= 7) {
-                            const stones = getDirections(board, ([x, y]), +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
+                            const stones = getDirections(board, elementPos, +Infinity, (el) => el === ELEMENT.STONE ? 1 : -1);
 
                             if ((stones && stones.length && stones[0].distance < 8)) {
-                                //console.log('see firy pill');
                                 directions.push({
-                                    pos: [x, y],
+                                    pos: elementPos,
                                     element: element,
                                     distance: path.length - 1,
                                     command: getCommandByCoords(headPosition[X], headPosition[Y], nextX, nextY)
                                 });
                             }
                         } else if (!findFloor && (element === ELEMENT.APPLE || element === ELEMENT.GOLD || element === ELEMENT.FURY_PILL)) {
-                            const enemies = getDirections(board, ([x, y]), +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil');
+                            const enemies = getDirections(board, elementPos, +Infinity, (el) => !el.ahead && ENEMY_HEAD.indexOf(el) > -1 ? 1 : -1, false, false, 'evil');
 
                             if (!enemies || !enemies.length || enemies[0].distance > 2) {
                                 directions.push({
-                                    pos: [x, y],
+                                    pos: elementPos,
                                     element: element,
                                     distance: path.length - 1,
                                     command: getCommandByCoords(headPosition[X], headPosition[Y], nextX, nextY)
@@ -306,7 +305,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
                             }
                         } else {
                             directions.push({
-                                pos: [x, y],
+                                pos: elementPos,
                                 element: element,
                                 distance: path.length - 1,
                                 command: getCommandByCoords(headPosition[X], headPosition[Y], nextX, nextY)
