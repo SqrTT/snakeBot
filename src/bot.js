@@ -48,7 +48,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
     }
     pathMatrix = '';
 
-    function writeLog(el) {
+    function writeLog(el, nextStep) {
         var nextPos = sum(DIRECTIONS_MAP[el.command], currentState.player.head.getPos())
         var logObject = {
             pathMatrix: pathMatrix,
@@ -67,8 +67,8 @@ function getNextSnakeMoveInner(board, logger, logState) {
                 y: el.pos[Y]
             },
             nextPosition: {
-                x: nextPos[X],
-                y: nextPos[Y]
+                x: (nextStep && nextStep[X]) || nextPos[X],
+                y: (nextStep && nextStep[Y]) || nextPos[Y]
             }
         }
 
@@ -115,14 +115,14 @@ function getNextSnakeMoveInner(board, logger, logState) {
         var res = AlphaBeta(12, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
 
         logger(`attack score: ${res[1]} - ${res[0]}`);
-        writeLog(el)
+        writeLog(el, DIRECTIONS_MAP[res[0]]);
         if (res[0] !== 'NO') {
             return res[0];
         }
 
     }
     if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount))) {
-        logger('fury stone: ' + el.distance);
+        logger('fury stone (evil): ' + el.distance);
         writeLog(el)
         return ACT + el.command;
     } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance === 1))) {
@@ -274,31 +274,6 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
             var element = getAt(board, x, y);
 
             if (rateElement(element, mode) > 0) {
-                // if (!findFloor && !skipAhead && isEnemyHead(element)) {
-                //     const headDirection = ENEMY_HEAD_TO_DIRECTION[element];
-                //     [1, 2, 3].forEach(ahead => {
-                //         const currentHeadPos = multPositions(DIRECTION[headDirection], ahead);
-                //         const [nextMoveX, nextMoveY] = sumPositions([x, y], currentHeadPos);
-
-                //         if (boardClone[nextMoveY] && boardClone[nextMoveY][nextMoveX] === 0) {
-                //             var headPath = getPaths(boardClone, headPosition, nextMoveX, nextMoveY);
-
-                //             if (headPath && headPath.length > 1 && !isDeadEnd(board, x, y, headPath)) {
-
-                //                 //headPath.shift();
-                //                 const [nextX, nextY] = headPath[1];
-
-
-                //                 directions.push({
-                //                     element: element,
-                //                     ahead: ahead,
-                //                     distance: headPath.length - 1,
-                //                     command: getCoomandByCoord(headPosition.x, headPosition.y, nextX, nextY)
-                //                 });
-                //             }
-                //         }
-                //     });
-                // }
                 var path = getPaths(boardClone, headPosition, x, y);
                 if (path && path.length > 1) {
                     // logger(`path length: ${path.length}`);

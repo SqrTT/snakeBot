@@ -27,7 +27,7 @@ describe("bot", () => {
                 '☼  ×──>  ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
-            //debugger;
+            debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).not.toEqual(COMMANDS.RIGHT);
         });
@@ -78,7 +78,6 @@ describe("bot", () => {
                 '☼ ×──♣   ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
-            //debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.UP);
         });
