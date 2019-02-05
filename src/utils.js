@@ -76,6 +76,8 @@ function isSelf(element) {
 }
 exports.isSelf = isSelf
 
+
+
 /**
  *
  * @param {[number, number]} a1

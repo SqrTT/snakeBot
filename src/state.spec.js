@@ -1,6 +1,6 @@
 const { State } = require('./state');
 const {
-    COMMANDS
+    COMMANDS, ELEMENT
 } = require('./constants');
 
 describe("State", () => {
@@ -19,6 +19,9 @@ describe("State", () => {
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
+            expect(state.player.elements.length).toEqual(4);
+            expect(state.enemies[0].elements.length).toEqual(4);
+
             var nextState = state.playerStep(COMMANDS.DOWN)
 
             expect(nextState.playerScore).toEqual(-50);
@@ -42,7 +45,7 @@ describe("State", () => {
 
             var enemyState = res.newState.enemyStep(COMMANDS.UP, 0);
 
-            expect(enemyState.enemiesScore).toEqual(50);
+            expect(enemyState.enemiesScore).toEqual(-50);
         });
         it("should prevent step on enemy", () => {
             const board =
@@ -83,42 +86,46 @@ describe("State", () => {
 
             expect(res.enemiesScore).toEqual(-50);
         });
+
         it("should find head correctly", () => {
+
             const board =
-            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
-            "☼☼                           ☼" +
-            "☼#                ®          ☼" +
-            "☼☼       ●      ○   ○        ☼" +
-            "☼☼        $                  ☼" +
-            "☼☼          ©●               ☼" +
-            "☼☼     ☼☼☼☼☼                 ☼" +
-            "☼☼     ☼                     ☼" +
-            "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
-            "☼☼     ☼          ☼   ☼      ☼" +
-            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
-            "☼☼                ☼  ●       ☼" +
-            "☼☼      ○         ☼          ☼" +
-            "☼☼®                          ☼" +
-            "☼#                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼        ☼☼☼            ●   ☼" +
-            "☼☼       ☼○ ☼æ               ☼" +
-            "☼☼      ☼☼☼☼#˅    ☼☼   ☼#    ☼" +
-            "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼" +
-            "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
-            "☼☼                ☼     ☼    ☼" +
-            "☼☼     ●          ☼    ○☼    ☼" +
-            "☼☼                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼ ○           ╔╕            ☼" +
-            "☼#             ╚╗            ☼" +
-            "☼☼              ▼            ☼" +
-            "☼☼              $         ©  ☼" +
-            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+            '☼☼☼☼☼☼☼☼☼☼' +
+            '#        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            "☼  ╔╕    ☼" +
+            "☼  ╚╗    ☼" +
+            "☼   ▼    ☼" +
+            "☼   $    ☼" +
+            "☼☼☼☼☼☼☼☼☼☼";
 
             var state = State.getState(board);
             expect(state.player.elements.length).toEqual(5);
+            expect(state.player.head.type).toEqual(ELEMENT.HEAD_DOWN);
+            expect(state.player.head.getX()).toEqual(4);
+            expect(state.player.head.getY()).toEqual(7);
         });
 
+        it("should find head correctly event for short size", () => {
+            const board =
+            '☼☼☼☼☼☼☼☼☼☼' +
+            '#        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼        ☼' +
+            '☼   ╘►   ☼' +
+            '☼  ×──>  ☼' +
+            '☼☼☼☼☼☼☼☼☼☼';
+
+            var state = State.getState(board);
+            expect(state.player.elements.length).toEqual(2);
+            expect(state.player.head.type).toEqual(ELEMENT.HEAD_RIGHT);
+            expect(state.player.head.getX()).toEqual(5);
+            expect(state.player.head.getY()).toEqual(7);
+        });
     });
 });

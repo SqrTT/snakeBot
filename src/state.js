@@ -1,5 +1,5 @@
-var { ELEMENT, COMMANDS, COMMANDS_LIST, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
-var { getBoardAsArray, findElementPos, sum, findElementsPos, getDirectionByPos, isSamePos } = require("./utils");
+var { ELEMENT, COMMANDS, COMMANDS_LIST, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMY_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
+var { getBoardAsArray, findElementPos, sum, isEnemy, findElementsPos, getDirectionByPos, isSelf, isSamePos } = require("./utils");
 
 const X = 0,
     Y = 1;
@@ -318,12 +318,59 @@ var EVALUATION_MAP = {
         [ELEMENT.ENEMY_BODY_RIGHT_UP]: 0
     }
 }
+var OPPOSITE_MAP = {
+    [COMMANDS.DOWN]: COMMANDS.UP,
+    [COMMANDS.UP]: COMMANDS.DOWN,
+    [COMMANDS.RIGHT]: COMMANDS.LEFT,
+    [COMMANDS.LEFT]: COMMANDS.RIGHT
+}
+
+var PLAYER_BODY_MATRIX = {
+    [COMMANDS.DOWN + ELEMENT.BODY_LEFT_DOWN]: COMMANDS.LEFT,
+    [COMMANDS.LEFT + ELEMENT.BODY_LEFT_DOWN]: COMMANDS.DOWN,
+
+    [COMMANDS.UP + ELEMENT.BODY_LEFT_UP]: COMMANDS.LEFT,
+    [COMMANDS.LEFT + ELEMENT.BODY_LEFT_UP]: COMMANDS.UP,
+
+    [COMMANDS.DOWN + ELEMENT.BODY_RIGHT_DOWN]: COMMANDS.RIGHT,
+    [COMMANDS.RIGHT + ELEMENT.BODY_RIGHT_DOWN]: COMMANDS.DOWN,
+
+    [COMMANDS.UP + ELEMENT.BODY_RIGHT_UP]: COMMANDS.RIGHT,
+    [COMMANDS.RIGHT + ELEMENT.BODY_RIGHT_UP]: COMMANDS.UP,
+
+    [COMMANDS.UP + ELEMENT.BODY_VERTICAL]: COMMANDS.DOWN,
+    [COMMANDS.DOWN + ELEMENT.BODY_VERTICAL]: COMMANDS.UP,
+
+    [COMMANDS.LEFT + ELEMENT.BODY_HORIZONTAL]: COMMANDS.RIGHT,
+    [COMMANDS.RIGHT + ELEMENT.BODY_HORIZONTAL]: COMMANDS.LEFT,
+}
+
+var ENEMY_BODY_MATRIX = {
+    [COMMANDS.DOWN + ELEMENT.ENEMY_BODY_LEFT_DOWN]: COMMANDS.LEFT,
+    [COMMANDS.LEFT + ELEMENT.ENEMY_BODY_LEFT_DOWN]: COMMANDS.DOWN,
+
+    [COMMANDS.UP + ELEMENT.ENEMY_BODY_LEFT_UP]: COMMANDS.LEFT,
+    [COMMANDS.LEFT + ELEMENT.ENEMY_BODY_LEFT_UP]: COMMANDS.UP,
+
+    [COMMANDS.DOWN + ELEMENT.ENEMY_BODY_RIGHT_DOWN]: COMMANDS.RIGHT,
+    [COMMANDS.RIGHT + ELEMENT.ENEMY_BODY_RIGHT_DOWN]: COMMANDS.DOWN,
+
+    [COMMANDS.UP + ELEMENT.ENEMY_BODY_RIGHT_UP]: COMMANDS.RIGHT,
+    [COMMANDS.RIGHT + ELEMENT.ENEMY_BODY_RIGHT_UP]: COMMANDS.UP,
+
+    [COMMANDS.UP + ELEMENT.ENEMY_BODY_VERTICAL]: COMMANDS.DOWN,
+    [COMMANDS.DOWN + ELEMENT.ENEMY_BODY_VERTICAL]: COMMANDS.UP,
+
+    [COMMANDS.LEFT + ELEMENT.ENEMY_BODY_HORIZONTAL]: COMMANDS.RIGHT,
+    [COMMANDS.RIGHT + ELEMENT.ENEMY_BODY_HORIZONTAL]: COMMANDS.LEFT,
+}
 
 /**
  * @param {string[][]} board
  * @param {[number, number]} pos
  * @param {string} value
  */
+
 function setValAtMut(board, pos, value) {
     board[pos[Y]][pos[X]] = value;
     return board;
@@ -684,88 +731,159 @@ class State {
             state: newState
         };
     }
+    /**
+     *
+     * @param {[number, number]} headPos
+     * @param {string[][]} boardMatrix
+     */
+    static getPlayerSnakePos(headPos, boardMatrix) {
+        var snakeElements = [{ pos: headPos, type: getValAt(boardMatrix, headPos) }];
+        setValAtMut(boardMatrix, headPos, ELEMENT.NONE);
+
+        //neck
+        for (var dir = COMMANDS_LIST.length - 1; dir >= 0; --dir) {
+            var currentDir = COMMANDS_LIST[dir];
+            var nextPos = sum(headPos, DIRECTIONS_MAP[currentDir]);
+            var currentElAtPos = getValAt(boardMatrix, nextPos);
+            var done = false;
+            if (PLAYER_TAIL.indexOf(currentElAtPos) > -1) {
+                snakeElements.push({
+                    pos: nextPos,
+                    type: currentElAtPos
+                });
+                setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
+                break;
+            }
+            // other body parts
+
+            while (isSelf(currentElAtPos) && PLAYER_BODY_MATRIX[OPPOSITE_MAP[currentDir] + currentElAtPos]) {
+                snakeElements.push({
+                    pos: nextPos,
+                    type: currentElAtPos
+                });
+                setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
+
+                var prevDir = currentDir;
+                currentDir = PLAYER_BODY_MATRIX[OPPOSITE_MAP[currentDir] + currentElAtPos];
+                nextPos = sum(nextPos, DIRECTIONS_MAP[currentDir]);
+                currentElAtPos = getValAt(boardMatrix, nextPos);
+
+                if (PLAYER_TAIL.indexOf(currentElAtPos) > -1) {
+                    snakeElements.push({
+                        pos: nextPos,
+                        type: currentElAtPos
+                    });
+                    setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
+                    done = true;
+                    break;
+                } else if (!isSelf(currentElAtPos)) {
+                    done = true;
+                    break;
+                }
+            }
+            if (done) {
+                break;
+            }
+        }
+        return snakeElements.reverse();
+    }
+    /**
+     *
+     * @param {[number, number]} headPos
+     * @param {string[][]} boardMatrix
+     */
+    static getEnemySnakePos(headPos, boardMatrix) {
+        var snakeElements = [{ pos: headPos, type: getValAt(boardMatrix, headPos) }];
+        setValAtMut(boardMatrix, headPos, ELEMENT.NONE);
+
+        //neck
+        for (var dir = COMMANDS_LIST.length - 1; dir >= 0; --dir) {
+            var currentDir = COMMANDS_LIST[dir];
+            var nextPos = sum(headPos, DIRECTIONS_MAP[currentDir]);
+            var currentElAtPos = getValAt(boardMatrix, nextPos);
+            var done = false;
+            // other body parts
+            if (ENEMY_TAIL.indexOf(currentElAtPos) > -1) {
+                snakeElements.push({
+                    pos: nextPos,
+                    type: currentElAtPos
+                });
+                setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
+                break;
+            }
+            while (isEnemy(currentElAtPos) && ENEMY_BODY_MATRIX[OPPOSITE_MAP[currentDir] + currentElAtPos]) {
+                snakeElements.push({
+                    pos: nextPos,
+                    type: currentElAtPos
+                });
+                setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
+
+                var prevDir = currentDir;
+                currentDir = ENEMY_BODY_MATRIX[OPPOSITE_MAP[currentDir] + currentElAtPos];
+                nextPos = sum(nextPos, DIRECTIONS_MAP[currentDir]);
+                currentElAtPos = getValAt(boardMatrix, nextPos);
+
+                if (ENEMY_TAIL.indexOf(currentElAtPos) > -1) {
+                    snakeElements.push({
+                        pos: nextPos,
+                        type: currentElAtPos
+                    });
+                    setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
+                    done = true;
+                    break;
+                } else if (!isEnemy(currentElAtPos)) {
+                    done = true;
+                    break;
+                }
+            }
+            if (done) {
+                break;
+            }
+        }
+        return snakeElements.reverse();
+    }
     static getState(board, prevState = new State()) {
         var boardMatrix = getBoardAsArray(board).map(x => x.split(''));
         var state = new State();
 
         // player
-        PLAYER_TAIL.some(tailType => {
-            var pos = findElementPos(boardMatrix, tailType);
+        PLAYER_HEAD_LIST.some(headType => {
+            var pos = findElementPos(boardMatrix, headType);
             if (pos) {
                 var snake = new Snake();
                 state.player = snake;
 
-                var newEl = new Element(pos, tailType, snake);
-                snake.elements.push(newEl);
+                State.getPlayerSnakePos(pos, boardMatrix).forEach(elPos => {
+                    var newEl = new Element(elPos.pos, elPos.type, snake);
+                    snake.elements.push(newEl);
+                });
+                snake.head = snake.elements[snake.elements.length - 1];
 
-                setValAtMut(boardMatrix, pos, ELEMENT.NONE);
-                // find snake body
-                var isEnd = 100;
-                var currentPos = pos;
-                do {
-                    isEnd--;
-                    for (var direction of DIRECTIONS_RAW) {
-                        var next = sum(currentPos, direction);
-                        var elAtPos = getValAt(boardMatrix, next)
-                        if (PLAYER_BODY.indexOf(elAtPos) > -1) {
-                            currentPos = next;
-                            var newEl = new Element(currentPos, elAtPos, snake);
-                            snake.elements.push(newEl);
+                if (prevState.boardMatrix) {
+                    var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
 
-                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
-
-                            // bodyPart
-                        } else if (PLAYER_HEAD_LIST.indexOf(elAtPos) > -1) {
-                            currentPos = next;
-                            isEnd = 0;
-                            // tail
-                            currentPos = next;
-                            var newEl = new Element(currentPos, elAtPos, snake);
-                            snake.elements.push(newEl);
-                            snake.head = snake.elements[snake.elements.length - 1];
-
-                            if (prevState.player) {
-                                if (prevState.player.flyCount > 0) {
-                                    snake.flyCount = prevState.player.flyCount;
-                                }
-                                if (prevState.player.furyCount > 0) {
-                                    snake.furyCount = prevState.player.furyCount;
-                                }
-                            }
-                            if (prevState.boardMatrix) {
-                                var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
-
-                                if (prevEl === ELEMENT.FLYING_PILL) {
-                                    snake.flyCount = 11;
-                                } else if (prevEl === ELEMENT.FURY_PILL) {
-                                    snake.furyCount = 11;
-                                }
-                            } else {
-                                if (elAtPos === ELEMENT.HEAD_FLY) {
-                                    snake.flyCount = 2;
-                                } else if (elAtPos === ELEMENT.HEAD_EVIL) {
-                                    snake.furyCount = 2;
-                                }
-                            }
-                            if (elAtPos === ELEMENT.HEAD_SLEEP || elAtPos === ELEMENT.HEAD_DEAD) {
-                                snake.isDead = true;
-                            }
-                            if (snake.flyCount > 0) {
-                                snake.flyCount--;
-                            }
-                            if (snake.furyCount > 0) {
-                                snake.furyCount--;
-                            }
-
-                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
-                            break;
-                        }
+                    if (prevEl === ELEMENT.FLYING_PILL) {
+                        snake.flyCount = 11;
+                    } else if (prevEl === ELEMENT.FURY_PILL) {
+                        snake.furyCount = 11;
                     }
-
-                } while (isEnd > 0);
-                if (!snake.head) {
-                    snake.head = snake.elements[snake.elements.length - 1];
+                } else {
+                    if (snake.head.type === ELEMENT.HEAD_FLY) {
+                        snake.flyCount = 2;
+                    } else if (snake.head.type === ELEMENT.HEAD_EVIL) {
+                        snake.furyCount = 2;
+                    }
                 }
+                if (snake.head.type === ELEMENT.HEAD_SLEEP || snake.head.type === ELEMENT.HEAD_DEAD) {
+                    snake.isDead = true;
+                }
+                if (snake.flyCount > 0) {
+                    snake.flyCount--;
+                }
+                if (snake.furyCount > 0) {
+                    snake.furyCount--;
+                }
+
                 for (var dirs = COMMANDS_LIST.length - 1; dirs >= 0; --dirs) {
                     var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
                     var elAtPos = getValAt(boardMatrix, nextPos);
@@ -782,72 +900,44 @@ class State {
         });
 
         // enemies
-        ENEMY_TAIL.forEach(tailType => {
+        ENEMIES_HEAD_LIST.forEach(tailType => {
             var enemiesPos = findElementsPos(boardMatrix, tailType);
 
             for (var enemyPos of enemiesPos) {
                 var snake = new Snake();
                 state.enemies.push(snake)
 
-                var newEl = new Element(enemyPos, tailType, snake);
-                snake.elements.push(newEl);
-
-                // find snake body
-                var isEnd = 100;
-                var currentPos = enemyPos;
-                do {
-                    isEnd--;
-                    for (var direction of DIRECTIONS_RAW) {
-                        var next = sum(currentPos, direction);
-                        var elAtPos = getValAt(boardMatrix, next)
-                        if (ENEMY_BODY.indexOf(elAtPos) > -1) {
-                            currentPos = next;
-                            var newEl = new Element(currentPos, elAtPos, snake);
-                            snake.elements.push(newEl);
-                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
-
-                            // bodyPart
-                        } else if (ENEMIES_HEAD_LIST.indexOf(elAtPos) > -1) {
-                            currentPos = next;
-                            isEnd = 0;
-                            // head
-                            var newEl = new Element(currentPos, elAtPos, snake);
-                            snake.elements.push(newEl);
-                            snake.head = snake.elements[snake.elements.length - 1];
-
-                            setValAtMut(boardMatrix, currentPos, ELEMENT.NONE);
-
-                            if (prevState.boardMatrix) {
-                                var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
-
-                                if (prevEl === ELEMENT.FLYING_PILL) {
-                                    snake.flyCount += 11;
-                                } else if (prevEl === ELEMENT.FURY_PILL) {
-                                    snake.furyCount += 11;
-                                }
-                            } else {
-                                if (elAtPos === ELEMENT.ENEMY_HEAD_FLY) {
-                                    snake.flyCount = 2;
-                                } else if (elAtPos === ELEMENT.ENEMY_HEAD_EVIL) {
-                                    snake.furyCount = 2;
-                                }
-                            }
-                            if (elAtPos === ELEMENT.ENEMY_HEAD_SLEEP || elAtPos === ELEMENT.ENEMY_HEAD_DEAD) {
-                                snake.isDead = true;
-                            }
-                            if (snake.flyCount > 0) {
-                                snake.flyCount--;
-                            }
-                            if (snake.furyCount > 0) {
-                                snake.furyCount--;
-                            }
-
-                            break;
-                        }
-                    }
-
-                } while (isEnd > 0);
+                State.getEnemySnakePos(enemyPos, boardMatrix).forEach(elPos => {
+                    var newEl = new Element(elPos.pos, elPos.type, snake);
+                    snake.elements.push(newEl);
+                });
                 snake.head = snake.elements[snake.elements.length - 1];
+
+                if (prevState.boardMatrix) {
+                    var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
+
+                    if (prevEl === ELEMENT.FLYING_PILL) {
+                        snake.flyCount += 11;
+                    } else if (prevEl === ELEMENT.FURY_PILL) {
+                        snake.furyCount += 11;
+                    }
+                } else {
+                    if (snake.head.type === ELEMENT.ENEMY_HEAD_FLY) {
+                        snake.flyCount = 2;
+                    } else if (snake.head.type === ELEMENT.ENEMY_HEAD_EVIL) {
+                        snake.furyCount = 2;
+                    }
+                }
+                if (snake.head.type === ELEMENT.ENEMY_HEAD_SLEEP || snake.head.type === ELEMENT.ENEMY_HEAD_DEAD) {
+                    snake.isDead = true;
+                }
+                if (snake.flyCount > 0) {
+                    snake.flyCount--;
+                }
+                if (snake.furyCount > 0) {
+                    snake.furyCount--;
+                }
+
                 for (var dirs = COMMANDS_LIST.length - 1; dirs >= 0; --dirs) {
                     var nextPos = sum(snake.head.pos, DIRECTIONS_MAP[COMMANDS_LIST[dirs]]);
                     var elAtPos = getValAt(boardMatrix, nextPos);

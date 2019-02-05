@@ -27,6 +27,7 @@ describe("bot", () => {
                 '☼  ×──>  ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
+            //debugger;
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).not.toEqual(COMMANDS.RIGHT);
         });
@@ -327,13 +328,14 @@ describe("bot", () => {
                 '☼  ╚═►   ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
+
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.RIGHT);
         });
         it("should avoid dead ends", () => {
             const board =
                 `☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
-☼☼       ○               ►   ☼
+☼☼       ○               ►  $☼
 ☼#                       ╚══╕☼
 ☼☼       ●                   ☼
 ☼☼                           ☼
