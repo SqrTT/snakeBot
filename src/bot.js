@@ -7,7 +7,7 @@ const { AlphaBeta } = require('./minimax');
 
 var { State, getValAt } = require('./state');
 var PF = require('pathfinding');
-const EATING_STONE_SIZE = 6;
+const EATING_STONE_SIZE = 5;
 let turnsCount = 0;
 
 
@@ -99,7 +99,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
     var ACT = mode === 'evil' ? 'ACT,' : '';
 
     /// attack
-    if ((el = directions.find(x => isEnemyHead(x.element) && x.distance < 6))) {
+    if ((el = directions.find(x => isEnemyHead(x.element) && x.distance < 7))) {
         logger('>>> attack mode <<<\n ' + el.distance);
         var enIdx = 0;
 
@@ -112,7 +112,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             }
         })
        // debugger;
-        var res = AlphaBeta(10, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+        var res = AlphaBeta(12, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
 
         logger(`attack score: ${res[1]} - ${res[0]}`);
         writeLog(el)
@@ -133,7 +133,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('extra short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 3))) {
+    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
         logger('short self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
