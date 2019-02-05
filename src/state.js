@@ -1,5 +1,5 @@
 var { ELEMENT, COMMANDS, COMMANDS_LIST, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMY_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
-var { getBoardAsArray, findElementPos, sum, isEnemy, findElementsPos, getDirectionByPos, isSelf, isSamePos } = require("./utils");
+var { getBoardAsArray, findElementPos, sum, isEnemy, findElementsPos, getDirectionByPos, isSelf, isSamePos, isEnemyHead, isPlayerHead } = require("./utils");
 
 const X = 0,
     Y = 1;
@@ -364,7 +364,7 @@ var ENEMY_BODY_MATRIX = {
     [COMMANDS.LEFT + ELEMENT.ENEMY_BODY_HORIZONTAL]: COMMANDS.RIGHT,
     [COMMANDS.RIGHT + ELEMENT.ENEMY_BODY_HORIZONTAL]: COMMANDS.LEFT,
 }
-
+const scoreForOneElement = 10;
 /**
  * @param {string[][]} board
  * @param {[number, number]} pos
@@ -567,7 +567,22 @@ class State {
                 var snakeEl = snakesElements[snakeElIds];
 
                 if (isSamePos(snakeEl.pos, newState.player.head.pos) && newState.player !== snakeEl.owner) {
-                    playerScore = EVALUATION_MAP[mode][snakeEl.type];
+                    if (isEnemyHead(snakeEl.type)) {
+                        if (newState.player.furyCount - 1 > 0) {
+                            playerScore = scoreForOneElement * snakeEl.owner.elements.length;
+                        } else if (newState.player.flyCount) {
+                            playerScore = 0;
+                        } else {
+                            if (snakeEl.owner.elements.length + 2 <= newState.player.elements.length) {
+                                playerScore = scoreForOneElement * snakeEl.owner.elements.length;
+                            } else {
+                                playerScore = -50;
+                            }
+                        }
+                    } else {
+                        playerScore = EVALUATION_MAP[mode][snakeEl.type];
+                    }
+
                     break;
                 }
             }
@@ -632,7 +647,22 @@ class State {
                     var snakeEl = snakesElements[snakeElIds];
 
                     if (isSamePos(snakeEl.pos, enemy.head.pos) && enemy !== snakeEl.owner) {
-                        enemyScore = -ENEMY_EVALUATION_MAP[mode][snakeEl.type];
+                        if (PLAYER_HEAD_LIST.indexOf(snakeEl.type) > -1) {
+                            if (enemy.furyCount - 1 > 0) {
+                                enemyScore = -scoreForOneElement * snakeEl.owner.elements.length;
+                            } else if (enemy.flyCount) {
+                                enemyScore = 0;
+                            } else {
+                                if (snakeEl.owner.elements.length + 2 <= enemy.elements.length) {
+                                    enemyScore = -scoreForOneElement * snakeEl.owner.elements.length;
+                                } else {
+                                    enemyScore = 50;
+                                }
+                            }
+                        } else {
+                            enemyScore = -ENEMY_EVALUATION_MAP[mode][snakeEl.type];
+                        }
+
                         break;
                     }
                 }

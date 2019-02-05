@@ -115,13 +115,13 @@ function getNextSnakeMoveInner(board, logger, logState) {
         var res = AlphaBeta(12, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
 
         logger(`attack score: ${res[1]} - ${res[0]}`);
-        writeLog(el, DIRECTIONS_MAP[res[0]]);
+        writeLog(el, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
         if (res[0] !== 'NO') {
             return res[0];
         }
 
     }
-    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount))) {
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount - 1))) {
         logger('fury stone (evil): ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -137,7 +137,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('short self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 15))) {
+    } else if ((el = directions.find(x => x.element === ELEMENT.FURY_PILL && x.distance < 20))) {
         logger('short fury: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -172,7 +172,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             } else if (x.element === ELEMENT.APPLE) {
                 foodDir[x.command] += 2 / (x.distance * x.distance);
             } else if (x.element === ELEMENT.FURY_PILL) {
-                foodDir[x.command] += 4 / (x.distance * x.distance);
+                foodDir[x.command] += 6 / (x.distance * x.distance);
             } else if (isEnemyHead(x.element)) {
                 foodDir[x.command] += 8 / (x.distance * x.distance);
             }

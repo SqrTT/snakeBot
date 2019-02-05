@@ -169,5 +169,53 @@ describe("State", () => {
             expect(state.player.head.getX()).toEqual(5);
             expect(state.player.head.getY()).toEqual(7);
         });
+
+        it("should find head correctly event for short size", () => {
+            const board =
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼                           ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼                 ●         ☼" +
+            "☼☼                           ☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼                     ☼" +
+            "☼#     ☼☼☼        ☼☼☼☼#  ©   ☼" +
+            "☼☼     ☼          ☼   ☼  ●   ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼# ○   ©☼" +
+            "☼☼                ☼          ☼" +
+            "☼☼                ☼●●        ☼" +
+            "☼☼                           ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼        ☼☼☼  ●×──┐         ☼" +
+            "☼☼       ☼  ☼╔►<───┘         ☼" +
+            "☼☼      ☼☼☼☼#║    ☼☼ ○ ☼#  ○ ☼" +
+            "☼☼      ☼   ☼║    ☼ ☼ ☼ ☼    ☼" +
+            "☼#      ☼   ☼║    ☼  ☼  ☼    ☼" +
+            "☼☼          ╘╝    ☼     ☼    ☼" +
+            "☼☼                ☼     ☼    ☼" +
+            "☼☼                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼                           ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+            var state = State.getState(board);
+            expect(state.player.elements.length).toEqual(7);
+
+
+            var resPlay = state.playerStep(COMMANDS.RIGHT);
+            expect(resPlay.playerScore).toEqual(-50);
+
+            var resEnemy = state.enemyStep(COMMANDS.LEFT,0 );
+            expect(resEnemy.enemiesScore).toEqual(-70);
+
+
+
+        });
+
+
     });
 });
