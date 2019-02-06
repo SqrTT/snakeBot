@@ -2,7 +2,7 @@ const { State } = require('./state');
 const {
     COMMANDS, ELEMENT
 } = require('./constants');
-const { AlphaBeta } = require('./minimax');
+const { AlphaBeta, AlphaBetaMulti } = require('./minimax');
 
 describe("MiniMax", () => {
     describe('Cases', () => {
@@ -22,11 +22,68 @@ describe("MiniMax", () => {
                 '☼☼☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
-            var newState = state.enemyStep(COMMANDS.RIGHT, 0)
-
-            var res = AlphaBeta(12, true, newState.newState, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+            // var newState = state.enemyStep(COMMANDS.RIGHT, 0);
+           // debugger;
+            var res = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
 
             expect(res[0]).toEqual(COMMANDS.UP);
+        });
+
+        it("case2", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼ ×──♣   ☼' +
+                '☼╘══►    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            var state = State.getState(board);
+            const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+            expect(move[0]).toEqual(COMMANDS.RIGHT);
+        });
+
+        it('case3', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼                           ☼" +
+                "☼#   ┌ö                      ☼" +
+                "☼☼   ˅                       ☼" +
+                "☼☼    ◄══╕                   ☼" +
+                "☼☼                    ●      ☼" +
+                "☼☼     ☼☼☼☼☼                 ☼" +
+                "☼☼     ☼                     ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+                "☼☼     ☼          ☼   ☼  ●   ☼" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼                ☼     ©   $☼" +
+                "☼☼    ●                      ☼" +
+                "☼#             æ             ☼" +
+                "☼☼             │             ☼" +
+                "☼☼        ☼☼☼  │             ☼" +
+                "☼☼       ☼  ☼  └>            ☼" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+                "☼☼       ●        ☼     ☼    ☼" +
+                "☼☼                ☼     ☼$   ☼" +
+                "☼☼                           ☼" +
+                "☼☼    ●                    ○ ☼" +
+                "☼☼                           ☼" +
+                "☼#   ○                 ©     ☼" +
+                "☼☼                           ☼" +
+                "☼☼                       ●   ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+                var state = State.getState(board);
+                //debugger;
+                const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+                expect(move[0]).not.toEqual(COMMANDS.LEFT);
         });
 
     });

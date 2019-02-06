@@ -3,7 +3,7 @@ const { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP, ENEMY_HEAD, ENEMY_TAIL
 const {
     isGameOver, getHeadPosition, getBoardSize, getElementByXY, getBoardAsArray, findElementPos, sum, isEnemyHead, isEnemyBody, getAt, isSleep, isSelf, isEnemy, findElementsPos
 } = require('./utils');
-const { AlphaBeta } = require('./minimax');
+const { AlphaBeta, AlphaBetaMulti } = require('./minimax');
 
 var { State, getValAt } = require('./state');
 var PF = require('pathfinding');
@@ -88,6 +88,20 @@ function getNextSnakeMoveInner(board, logger, logState) {
     logger(`Size: ${selfSize}`);
     //logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
 
+
+
+    var mode = 'normal';
+    if (currentState.player.flyCount > 0) {
+        mode = 'fly';
+    } else if (currentState.player.furyCount > 0) {
+        mode = 'evil';
+    }
+    var scareEnemyes = mode !== 'evil' || currentState.player.elements.length >= enemiesSize + 2;
+    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, scareEnemyes, mode);
+    logger('path count: ' + JSON.stringify(directions.length));
+
+    var el;
+    var ACT = mode === 'evil' ? 'ACT,' : '';
     var closestEnemy = currentState.getClosestEnemy()
 
     if (closestEnemy.distance < 7 && closestEnemy.enemy) {
@@ -103,28 +117,14 @@ function getNextSnakeMoveInner(board, logger, logState) {
             }
         })
         // debugger;
-        var res = AlphaBeta(12, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+        var res = AlphaBetaMulti(10, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
 
         logger(`attack score: ${res[1]} - ${res[0]}`);
-        writeLog(closestEnemy.enemy.head, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
         if (res[0] !== 'NO') {
+            writeLog(closestEnemy.enemy.head, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
             return res[0];
         }
     }
-
-    var mode = 'normal';
-    if (currentState.player.flyCount > 0) {
-        mode = 'fly';
-    } else if (currentState.player.furyCount > 0) {
-        mode = 'evil';
-    }
-    var scareEnemyes = mode !== 'evil' || currentState.player.elements.length >= enemiesSize + 2;
-    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, scareEnemyes, mode);
-    logger('path count: ' + JSON.stringify(directions.length));
-
-    var el;
-    var ACT = mode === 'evil' ? 'ACT,' : '';
-
     /// attack
     if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount))) {
         logger('fury stone (evil): ' + el.distance);

@@ -37,13 +37,15 @@ describe("State", () => {
                 '☼        ☼' +
                 '#        ☼' +
                 '☼ ╘══►   ☼' +
-                '☼ ×──♣   ☼' +
+                '☼×──>®   ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             //debugger;
             var state = State.getState(board);
-            var nextState = state.enemyStep(COMMANDS.UP, 0);
-            expect(nextState.enemiesScore).toEqual(-50);
+            var newState = state.enemyStep(COMMANDS.RIGHT, 0);
+
+            var score = newState.newState.enemyStep(COMMANDS.UP, 0);
+            expect(score.enemiesScore).toEqual(-40);
         });
 
         it("should keep away form evil enemy", () => {
@@ -74,15 +76,16 @@ describe("State", () => {
                 '☼        ☼' +
                 '#        ☼' +
                 '☼╘══►    ☼' +
-                '☼ ×──♣   ☼' +
+                '☼×──>®   ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
-            var res = state.playerStep(COMMANDS.RIGHT);
+            var newState = state.enemyStep(COMMANDS.RIGHT, 0);
+            var res = newState.newState.playerStep(COMMANDS.RIGHT);
 
             var enemyState = res.newState.enemyStep(COMMANDS.UP, 0);
 
-            expect(enemyState.enemiesScore).toEqual(-50);
+            expect(enemyState.enemiesScore).toEqual(-40);
         });
         it("should prevent step on enemy", () => {
             const board =
@@ -98,6 +101,8 @@ describe("State", () => {
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
+            expect(state.boardMatrix.length).toEqual(10);
+
             var res = state.playerStep(COMMANDS.UP);
 
             expect(res.playerScore).toEqual(0);
@@ -112,7 +117,6 @@ describe("State", () => {
             const board =
             '☼☼☼☼☼☼☼☼☼☼' +
             '#        ☼' +
-            '☼        ☼' +
             '☼        ☼' +
             '☼        ☼' +
             '☼        ☼' +
