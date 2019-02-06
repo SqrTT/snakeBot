@@ -30,7 +30,7 @@ function AlphaBeta(depth, isMax, state, enemyIdx, alpha, beta, scorePlayer, scor
                 enemyIdx,
                 alpha,
                 beta,
-                (scorePlayer + emulationStep.playerScore),
+                scorePlayer + (emulationStep.playerScore * depth / 10),
                 scoreEnemy
             );
 
@@ -57,7 +57,7 @@ function AlphaBeta(depth, isMax, state, enemyIdx, alpha, beta, scorePlayer, scor
                     alpha,
                     beta,
                     scorePlayer,
-                    (enemyEmulationStep.enemiesScore - scoreEnemy)
+                    ((enemyEmulationStep.enemiesScore * depth / 10) - scoreEnemy)
                 );
 
                 if (next[SCORE] < beta[SCORE]) {

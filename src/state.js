@@ -1,5 +1,5 @@
 var { ELEMENT, COMMANDS, COMMANDS_LIST, PLAYER_HEAD_LIST, PLAYER_BODY, DIRECTIONS_MAP, DIRECTIONS_RAW, PLAYER_TAIL, ENEMY_TAIL, ENEMIES_HEAD_LIST, ENEMY_BODY, ENEMY_TAIL } = require("./constants");
-var { getBoardAsArray, findElementPos, sum, isEnemy, findElementsPos, getDirectionByPos, isSelf, isSamePos, isEnemyHead, isPlayerHead } = require("./utils");
+var { getBoardAsArray, findElementPos, sum, isEnemy, findElementsPos, getDirectionByPos, isSelf, isSamePos, isEnemyHead } = require("./utils");
 
 const X = 0,
     Y = 1;
@@ -525,6 +525,26 @@ class State {
          */
         this.enemies = [];
     }
+    getClosestEnemy() {
+        var distance = Infinity;
+        /**
+         * @type {Snake|undefined}
+         */
+        var enemy;
+        //Math.hypot(x2-x1, y2-y1)
+        this.enemies.forEach(x => {
+            var calc = Math.hypot(this.player.head.pos[X] - x.head.pos[X], this.player.head.pos[Y] - x.head.pos[Y])
+            if (calc < distance) {
+                enemy = x;
+                distance = calc;
+            }
+        });
+        return {
+            enemy,
+            distance
+        };
+
+    }
     toString() {
         var board = this.boardMatrix;
         this.getSnakesElements().forEach((el) => {
@@ -567,8 +587,8 @@ class State {
                 var snakeEl = snakesElements[snakeElIds];
 
                 if (isSamePos(snakeEl.pos, newState.player.head.pos) && newState.player !== snakeEl.owner) {
-                    if (isEnemyHead(snakeEl.type)) {
-                        if (newState.player.furyCount - 1 > 0) {
+                    if (isEnemyHead(snakeEl.type) || (isEnemy(snakeEl.type) && snakeEl.owner.isNeck(snakeEl.pos))) {
+                        if (newState.player.furyCount > 0) {
                             playerScore = scoreForOneElement * snakeEl.owner.elements.length;
                         } else if (newState.player.flyCount) {
                             playerScore = 0;
@@ -646,9 +666,12 @@ class State {
                 for (var snakeElIds = snakesElements.length - 1; snakeElIds >= 0; --snakeElIds) {
                     var snakeEl = snakesElements[snakeElIds];
 
-                    if (isSamePos(snakeEl.pos, enemy.head.pos) && enemy !== snakeEl.owner) {
+                    if (
+                        isSamePos(snakeEl.pos, enemy.head.pos) && enemy !== snakeEl.owner ||
+                        PLAYER_BODY.indexOf(snakeEl.type) > -1 && snakeEl.owner.isNeck(snakeEl.pos)
+                    ) {
                         if (PLAYER_HEAD_LIST.indexOf(snakeEl.type) > -1) {
-                            if (enemy.furyCount - 1 > 0) {
+                            if (enemy.furyCount > 0) {
                                 enemyScore = -scoreForOneElement * snakeEl.owner.elements.length;
                             } else if (enemy.flyCount) {
                                 enemyScore = 0;
@@ -916,9 +939,9 @@ class State {
                     var prevEl = getValAt(prevState.boardMatrix, snake.head.pos);
 
                     if (prevEl === ELEMENT.FLYING_PILL) {
-                        snake.flyCount = 11;
+                        snake.flyCount = 10;
                     } else if (prevEl === ELEMENT.FURY_PILL) {
-                        snake.furyCount = 11;
+                        snake.furyCount = 10;
                     }
                 } else {
                     if (snake.head.type === ELEMENT.HEAD_FLY) {

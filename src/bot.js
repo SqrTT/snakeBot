@@ -1,7 +1,7 @@
 
-const { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP, ENEMY_HEAD, ENEMY_TAIL } = require('./constants');
+const { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP, ENEMY_HEAD, ENEMY_TAIL, ENEMIES_HEAD_LIST } = require('./constants');
 const {
-    isGameOver, getHeadPosition, getBoardSize, getElementByXY, getBoardAsArray, findElementPos, sum, isEnemyHead, isEnemyBody, getAt, isSleep, isSelf, isEnemy
+    isGameOver, getHeadPosition, getBoardSize, getElementByXY, getBoardAsArray, findElementPos, sum, isEnemyHead, isEnemyBody, getAt, isSleep, isSelf, isEnemy, findElementsPos
 } = require('./utils');
 const { AlphaBeta } = require('./minimax');
 
@@ -49,19 +49,22 @@ function getNextSnakeMoveInner(board, logger, logState) {
     pathMatrix = '';
 
     function writeLog(el, nextStep) {
-        var nextPos = sum(DIRECTIONS_MAP[el.command], currentState.player.head.getPos())
+        var nextPos = nextStep;
+        if (!nextPos) {
+            nextPos = sum(DIRECTIONS_MAP[el.command], currentState.player.head.getPos())
+        }
         var logObject = {
             pathMatrix: pathMatrix,
             tickNumber: turnsCount,
             board: board,
             snakeIsDead: false,
-            possibleTargets: directions.map(dir => ({
+            possibleTargets: (directions && directions.map(dir => ({
                 points: dir.distance,
                 element: {
                     x: dir.pos[X],
                     y: dir.pos[Y]
                 }
-            })),
+            }))) || [],
             selectedTarget: {
                 x: el.pos[X],
                 y: el.pos[Y]
@@ -85,43 +88,45 @@ function getNextSnakeMoveInner(board, logger, logState) {
     logger(`Size: ${selfSize}`);
     //logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
 
-    var mode = 'normal';
-    if (currentState.player.flyCount > 0) {
-        mode = 'fly';
-    } else if (currentState.player.furyCount > 0) {
-        mode = 'evil';
-    }
-    const scareEnemyes = mode !== 'evil' || currentState.player.elements.length >= enemiesSize + 2;
-    const directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, scareEnemyes, mode);
-    logger('path count: ' + JSON.stringify(directions.length));
+    var closestEnemy = currentState.getClosestEnemy()
 
-    var el;
-    var ACT = mode === 'evil' ? 'ACT,' : '';
-
-    /// attack
-    if ((el = directions.find(x => isEnemyHead(x.element) && x.distance < 7))) {
-        logger('>>> attack mode <<<\n ' + el.distance);
+    if (closestEnemy.distance < 7 && closestEnemy.enemy) {
+        logger('>>> attack mode <<<\n ' + closestEnemy.distance);
         var enIdx = 0;
 
         currentState.enemies.some((en, idx) => {
-            if (en.isSelf(el.pos)) {
+            if (closestEnemy.enemy && en.isSelf(closestEnemy.enemy.head.pos)) {
                 enIdx = idx;
                 return true;
             } else {
                 return false;
             }
         })
-       // debugger;
+        // debugger;
         var res = AlphaBeta(12, true, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
 
         logger(`attack score: ${res[1]} - ${res[0]}`);
-        writeLog(el, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
+        writeLog(closestEnemy.enemy.head, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
         if (res[0] !== 'NO') {
             return res[0];
         }
-
     }
-    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount - 1))) {
+
+    var mode = 'normal';
+    if (currentState.player.flyCount > 0) {
+        mode = 'fly';
+    } else if (currentState.player.furyCount > 0) {
+        mode = 'evil';
+    }
+    var scareEnemyes = mode !== 'evil' || currentState.player.elements.length >= enemiesSize + 2;
+    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, scareEnemyes, mode);
+    logger('path count: ' + JSON.stringify(directions.length));
+
+    var el;
+    var ACT = mode === 'evil' ? 'ACT,' : '';
+
+    /// attack
+    if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount))) {
         logger('fury stone (evil): ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -390,5 +395,5 @@ exports.getNextSnakeMove = function (board, logger, logState = () => { }) {
     logger('turn time: ' + (Date.now() - time));
     return res;
 };
-exports.resetState = () => {lastState = undefined}
+exports.resetState = () => { lastState = undefined }
 
