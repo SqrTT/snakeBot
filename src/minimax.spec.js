@@ -86,5 +86,26 @@ describe("MiniMax", () => {
                 expect(move[0]).not.toEqual(COMMANDS.LEFT);
         });
 
+        it("should keep away form evil enemy", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼╘══►    ☼' +
+                '☼ ×──♣   ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            var state = State.getState(board);
+            state.enemies[0].furyCount = 5;
+            const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+            expect(move[0]).not.toEqual(COMMANDS.UP);
+
+        });
+
     });
 });

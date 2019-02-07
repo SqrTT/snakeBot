@@ -100,7 +100,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
     var ACT = mode === 'evil' ? 'ACT,' : '';
     var closestEnemy = currentState.getClosestEnemy()
 
-    if (closestEnemy.distance < 7 && closestEnemy.enemy) {
+    if ((currentState.enemies.length === 1 || closestEnemy.distance < 7) && closestEnemy.enemy) {
         logger('> attack mode <\n ' + closestEnemy.distance);
         var enIdx = 0;
 
@@ -113,7 +113,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             }
         })
         // debugger;
-        var res = AlphaBetaMulti(10, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+        var res = AlphaBetaMulti(8, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
         logger(`Enemy size: ${currentState.enemies[enIdx].elements.length}`);
         logger(`Attack score: ${res[1]} - ${res[0]}`);
         if (res[0] !== 'NO') {

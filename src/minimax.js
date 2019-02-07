@@ -22,7 +22,7 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, scorePlayer, scoreE
         for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
             if (state.enemies && state.enemies.length) {
                 var enemySteps = state.enemies[enemyIdx].nextSteps;
-
+                var next = ['NO', 0];
                 for (var enemyStepsIdx = enemySteps.length - 1; enemyStepsIdx >= 0; enemyStepsIdx--) {
 
                     var emulationStep = state.step(
@@ -31,7 +31,7 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, scorePlayer, scoreE
                         enemyIdx
                     );
 
-                    var next = AlphaBetaMulti(
+                    next = AlphaBetaMulti(
                         depth - 1,
                         emulationStep.state,
                         enemyIdx,
@@ -43,7 +43,6 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, scorePlayer, scoreE
                     if (next[SCORE] > alpha[SCORE]) {
                         alpha = [playerSteps[playerStepsIdx], next[SCORE]];
                     }
-
                     if (next[SCORE] < beta[SCORE]) {
                         beta = [enemySteps[enemyStepsIdx], next[SCORE]];
                     }
@@ -51,9 +50,6 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, scorePlayer, scoreE
                     if (alpha[SCORE] >= beta[SCORE]) {
                         break;
                     }
-                }
-                if (alpha[SCORE] >= beta[SCORE]) {
-                    break;
                 }
             }
         }

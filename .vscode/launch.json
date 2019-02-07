@@ -8,11 +8,14 @@
             "type": "node",
             "request": "launch",
             "name": "Jest Tests",
+            "cwd": "${workspaceFolder}",
             "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
             "args": [
                 "-i"
             ],
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "smartStep": false,
+            "console": "integratedTerminal"
         },
         {
             "type": "node",

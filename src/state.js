@@ -693,7 +693,7 @@ class State {
                     }
                 } else {
                     enemiesScore = State.SCORE_FOR_DEATH;
-                    playerScore = newState.player.elements.length * State.SCORE_ELEMENT;
+                    playerScore = State.SCORE_FOR_DEATH;
                     enemy.isDead = true;
                 }
             }
@@ -721,7 +721,7 @@ class State {
                         newState.player.isDead = true;
                     }
                 } else {
-                    enemiesScore = -newState.player.elements.length * State.SCORE_ELEMENT;
+                    enemiesScore = -State.SCORE_FOR_DEATH;
                     playerScore = -State.SCORE_FOR_DEATH;
                     newState.player.isDead = true;
                 }
