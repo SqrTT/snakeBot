@@ -2,7 +2,7 @@ const { State } = require('./state');
 const {
     COMMANDS, ELEMENT
 } = require('./constants');
-const { AlphaBeta, AlphaBetaMulti } = require('./minimax');
+const { AlphaBetaMulti } = require('./minimax');
 
 describe("MiniMax", () => {
     describe('Cases', () => {

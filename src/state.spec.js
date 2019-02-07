@@ -21,10 +21,9 @@ describe("State", () => {
             var state = State.getState(board);
             expect(state.player.elements.length).toEqual(4);
             expect(state.enemies[0].elements.length).toEqual(4);
+            var nextState = state.step(COMMANDS.DOWN, COMMANDS.RIGHT, 0)
 
-            var nextState = state.playerStep(COMMANDS.DOWN)
-
-            expect(nextState.playerScore).toEqual(-50);
+            expect(nextState.playerScore).toEqual(-State.SCORE_FOR_DEATH);
         });
 
         it("should keep away form evil enemy", () => {
@@ -36,16 +35,15 @@ describe("State", () => {
                 '☼        ☼' +
                 '☼        ☼' +
                 '#        ☼' +
-                '☼ ╘══►   ☼' +
+                '☼╘══►    ☼' +
                 '☼×──>®   ☼' +
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             //debugger;
             var state = State.getState(board);
-            var newState = state.enemyStep(COMMANDS.RIGHT, 0);
-
-            var score = newState.newState.enemyStep(COMMANDS.UP, 0);
-            expect(score.enemiesScore).toEqual(-40);
+            var newState = state.step(COMMANDS.RIGHT, COMMANDS.RIGHT, 0);
+            var score = newState.state.step(COMMANDS.RIGHT, COMMANDS.UP, 0);
+            expect(score.enemiesScore).toEqual(-State.SCORE_FOR_DEATH);
         });
 
         it("should keep away form evil enemy", () => {
@@ -62,8 +60,8 @@ describe("State", () => {
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
-            var nextState = state.playerStep(COMMANDS.DOWN);
-            expect(nextState.playerScore).toEqual(-50);
+            var nextState = state.step(COMMANDS.DOWN, COMMANDS.RIGHT, 0);
+            expect(nextState.playerScore).toEqual(-State.SCORE_FOR_DEATH);
         });
 
         it("should prevent step on enemy", () => {
@@ -80,12 +78,9 @@ describe("State", () => {
                 '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
-            var newState = state.enemyStep(COMMANDS.RIGHT, 0);
-            var res = newState.newState.playerStep(COMMANDS.RIGHT);
-
-            var enemyState = res.newState.enemyStep(COMMANDS.UP, 0);
-
-            expect(enemyState.enemiesScore).toEqual(-40);
+            var res = state.step(COMMANDS.RIGHT, COMMANDS.RIGHT, 0);
+            var enemyState = res.state.step(COMMANDS.UP, COMMANDS.UP, 0);
+            expect(enemyState.enemiesScore).toEqual(-State.SCORE_FOR_DEATH);
         });
         it("should prevent step on enemy", () => {
             const board =
@@ -103,49 +98,49 @@ describe("State", () => {
             var state = State.getState(board);
             expect(state.boardMatrix.length).toEqual(10);
 
-            var res = state.playerStep(COMMANDS.UP);
+            var res = state.step(COMMANDS.UP, COMMANDS.RIGHT, 0);
 
             expect(res.playerScore).toEqual(0);
             // move whole body
-            expect(res.newState.player.elements[0].getX()).toEqual(2);
-            expect(res.newState.player.elements[0].getY()).toEqual(7);
+            expect(res.state.player.elements[0].getX()).toEqual(2);
+            expect(res.state.player.elements[0].getY()).toEqual(7);
 
 
         });
         it("should prevent step on enemy", () => {
 
             const board =
-            '☼☼☼☼☼☼☼☼☼☼' +
-            '#        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼  ×──>  ☼' +
-            '☼   ╘══► ☼' +
-            '☼☼☼☼☼☼☼☼☼☼';
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼  ×──>  ☼' +
+                '☼   ╘══► ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             //debugger;
             var state = State.getState(board);
-            var res = state.enemyStep(COMMANDS.DOWN, 0);
+            var res = state.step(COMMANDS.RIGHT, COMMANDS.DOWN, 0);
 
-            expect(res.enemiesScore).toEqual(-50);
+            expect(res.enemiesScore).toEqual(State.SCORE_FOR_DEATH);
         });
 
         it("should find head correctly", () => {
 
             const board =
-            '☼☼☼☼☼☼☼☼☼☼' +
-            '#        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            "☼  ╔╕    ☼" +
-            "☼  ╚╗    ☼" +
-            "☼   ▼    ☼" +
-            "☼   $    ☼" +
-            "☼☼☼☼☼☼☼☼☼☼";
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                "☼  ╔╕    ☼" +
+                "☼  ╚╗    ☼" +
+                "☼   ▼    ☼" +
+                "☼   $    ☼" +
+                "☼☼☼☼☼☼☼☼☼☼";
 
             var state = State.getState(board);
             expect(state.player.elements.length).toEqual(5);
@@ -156,16 +151,16 @@ describe("State", () => {
 
         it("should find head correctly event for short size", () => {
             const board =
-            '☼☼☼☼☼☼☼☼☼☼' +
-            '#        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼        ☼' +
-            '☼   ╘►   ☼' +
-            '☼  ×──>  ☼' +
-            '☼☼☼☼☼☼☼☼☼☼';
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼   ╘►   ☼' +
+                '☼  ×──>  ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
 
             var state = State.getState(board);
             expect(state.player.elements.length).toEqual(2);
@@ -176,45 +171,42 @@ describe("State", () => {
 
         it("should find head correctly event for short size", () => {
             const board =
-            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
-            "☼☼                           ☼" +
-            "☼#                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼                 ●         ☼" +
-            "☼☼                           ☼" +
-            "☼☼     ☼☼☼☼☼                 ☼" +
-            "☼☼     ☼                     ☼" +
-            "☼#     ☼☼☼        ☼☼☼☼#  ©   ☼" +
-            "☼☼     ☼          ☼   ☼  ●   ☼" +
-            "☼☼     ☼☼☼☼#      ☼☼☼☼# ○   ©☼" +
-            "☼☼                ☼          ☼" +
-            "☼☼                ☼●●        ☼" +
-            "☼☼                           ☼" +
-            "☼#                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼        ☼☼☼  ●×──┐         ☼" +
-            "☼☼       ☼  ☼╔►<───┘         ☼" +
-            "☼☼      ☼☼☼☼#║    ☼☼ ○ ☼#  ○ ☼" +
-            "☼☼      ☼   ☼║    ☼ ☼ ☼ ☼    ☼" +
-            "☼#      ☼   ☼║    ☼  ☼  ☼    ☼" +
-            "☼☼          ╘╝    ☼     ☼    ☼" +
-            "☼☼                ☼     ☼    ☼" +
-            "☼☼                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼                           ☼" +
-            "☼#                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼                           ☼" +
-            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼                           ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼                 ●         ☼" +
+                "☼☼                           ☼" +
+                "☼☼     ☼☼☼☼☼                 ☼" +
+                "☼☼     ☼                     ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#  ©   ☼" +
+                "☼☼     ☼          ☼   ☼  ●   ☼" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼# ○   ©☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼                ☼●●        ☼" +
+                "☼☼                           ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼        ☼☼☼  ●×──┐         ☼" +
+                "☼☼       ☼  ☼╔►<───┘         ☼" +
+                "☼☼      ☼☼☼☼#║    ☼☼ ○ ☼#  ○ ☼" +
+                "☼☼      ☼   ☼║    ☼ ☼ ☼ ☼    ☼" +
+                "☼#      ☼   ☼║    ☼  ☼  ☼    ☼" +
+                "☼☼          ╘╝    ☼     ☼    ☼" +
+                "☼☼                ☼     ☼    ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
             var state = State.getState(board);
             expect(state.player.elements.length).toEqual(7);
 
-
-            var resPlay = state.playerStep(COMMANDS.RIGHT);
-            expect(resPlay.playerScore).toEqual(-50);
-
-            var resEnemy = state.enemyStep(COMMANDS.LEFT,0 );
-            expect(resEnemy.enemiesScore).toEqual(-70);
+            var resPlay = state.step(COMMANDS.RIGHT, COMMANDS.LEFT, 0);
+            expect(resPlay.playerScore).toEqual(-State.SCORE_FOR_DEATH);
+            expect(resPlay.enemiesScore).toEqual(-70);
 
 
 

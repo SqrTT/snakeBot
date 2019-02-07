@@ -3,11 +3,11 @@ const { ELEMENT, COMMANDS, COMMANDS_LIST, DIRECTIONS_MAP, ENEMY_HEAD, ENEMY_TAIL
 const {
     isGameOver, getHeadPosition, getBoardSize, getElementByXY, getBoardAsArray, findElementPos, sum, isEnemyHead, isEnemyBody, getAt, isSleep, isSelf, isEnemy, findElementsPos
 } = require('./utils');
-const { AlphaBeta, AlphaBetaMulti } = require('./minimax');
+const { AlphaBetaMulti } = require('./minimax');
 
 var { State, getValAt } = require('./state');
 var PF = require('pathfinding');
-const EATING_STONE_SIZE = 5;
+const EATING_STONE_SIZE = 12;
 let turnsCount = 0;
 
 
@@ -81,13 +81,9 @@ function getNextSnakeMoveInner(board, logger, logState) {
 
     logger(`turn: ${turnsCount} x:${currentState.player.head.pos[0]} y: ${currentState.player.head.pos[1]} evil: ${currentState.player.furyCount} fly: ${currentState.player.flyCount}`);
     var selfSize = currentState.player.elements.length;
-    var enemiesCount = currentState.enemies.length;
     var enemiesSize = 0;
 
-    var enemiesMiddleLength = Math.ceil(enemiesSize / enemiesCount)
     logger(`Size: ${selfSize}`);
-    //logger(`Enemy count: ${enemiesCount} - ${enemiesSize} -  ${enemiesMiddleLength}`);
-
 
 
     var mode = 'normal';
@@ -105,7 +101,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
     var closestEnemy = currentState.getClosestEnemy()
 
     if (closestEnemy.distance < 7 && closestEnemy.enemy) {
-        logger('>>> attack mode <<<\n ' + closestEnemy.distance);
+        logger('> attack mode <\n ' + closestEnemy.distance);
         var enIdx = 0;
 
         currentState.enemies.some((en, idx) => {
@@ -118,8 +114,8 @@ function getNextSnakeMoveInner(board, logger, logState) {
         })
         // debugger;
         var res = AlphaBetaMulti(10, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
-
-        logger(`attack score: ${res[1]} - ${res[0]}`);
+        logger(`Enemy size: ${currentState.enemies[enIdx].elements.length}`);
+        logger(`Attack score: ${res[1]} - ${res[0]}`);
         if (res[0] !== 'NO') {
             writeLog(closestEnemy.enemy.head, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
             return res[0];
