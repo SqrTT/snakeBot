@@ -364,6 +364,17 @@ var ENEMY_BODY_MATRIX = {
     [COMMANDS.LEFT + ELEMENT.ENEMY_BODY_HORIZONTAL]: COMMANDS.RIGHT,
     [COMMANDS.RIGHT + ELEMENT.ENEMY_BODY_HORIZONTAL]: COMMANDS.LEFT,
 }
+
+function isOtherBodyPartsAround(pos, boardMatrix) {
+    for (var dir = COMMANDS_LIST.length - 1; dir >= 0; --dir) {
+        var currentDir = COMMANDS_LIST[dir];
+        var nextPos = sum(pos, DIRECTIONS_MAP[currentDir]);
+        if (PLAYER_BODY.indexOf(getValAt(boardMatrix, nextPos)) > -1) {
+            return true;
+        }
+    }
+    return false;
+}
 const scoreForOneElement = 10;
 /**
  * @param {string[][]} board
@@ -683,31 +694,6 @@ class State {
         if (!enemy) {
             throw Error('Enemy not found');
         }
-        ////// snakesFight
-        if (!enemy.isDead && newState.player.contains(enemy.head.pos) && enemy.flyCount === 0) {
-            // enemy hits player
-            if (enemy.furyCount && !newState.player.furyCount) {
-                newState.player.isDead = true;
-                score = -State.SCORE_FOR_DEATH;
-            } else if (!enemy.furyCount && newState.player.furyCount) {
-                enemy.isDead = true;
-                score = State.SCORE_FOR_DEATH;
-            } else {
-                if (enemy.head.isSame(newState.player.head.pos) || newState.player.isNeck(enemy.head.pos)) {
-                    if (enemy.elements.length - newState.player.elements.length >= 2) {
-                        score = -newState.player.elements.length * State.SCORE_ELEMENT;
-                        newState.player.isDead = true;
-                    } else {
-                        score = -State.SCORE_FOR_DEATH;
-                        enemy.isDead = true;
-                        newState.player.isDead = true;
-                    }
-                } else {
-                    score = State.SCORE_FOR_DEATH;
-                    enemy.isDead = true;
-                }
-            }
-        }
         // player hits enemy
         if (!newState.player.isDead && enemy.contains(newState.player.head.pos) && newState.player.flyCount === 0) {
             if (enemy.furyCount && !newState.player.furyCount) {
@@ -722,16 +708,42 @@ class State {
                         score = newState.player.elements.length * State.SCORE_ELEMENT;
                         enemy.isDead = true;
                     } else {
-                        score = -State.SCORE_FOR_DEATH - 0.1;
+                        score = -State.SCORE_FOR_DEATH;
                         enemy.isDead = true;
                         newState.player.isDead = true;
                     }
                 } else {
-                    score = -State.SCORE_FOR_DEATH - 0.1;
+                    score = -State.SCORE_FOR_DEATH;
                     newState.player.isDead = true;
                 }
             }
         }
+        ////// snakesFight
+        if (!enemy.isDead && newState.player.contains(enemy.head.pos) && enemy.flyCount === 0) {
+            // enemy hits player
+            if (enemy.furyCount && !newState.player.furyCount) {
+                newState.player.isDead = true;
+                score = -State.SCORE_FOR_DEATH;
+            } else if (!enemy.furyCount && newState.player.furyCount) {
+                enemy.isDead = true;
+                score = State.SCORE_FOR_DEATH;
+            } else {
+                if (enemy.head.isSame(newState.player.head.pos) || newState.player.isNeck(enemy.head.pos)) {
+                    if (enemy.elements.length - newState.player.elements.length >= 2) {
+                        score = -State.SCORE_FOR_DEATH;
+                        newState.player.isDead = true;
+                    } else {
+                        score = -State.SCORE_FOR_DEATH;
+                        enemy.isDead = true;
+                        newState.player.isDead = true;
+                    }
+                } else {
+                    score = State.SCORE_FOR_DEATH;
+                    enemy.isDead = true;
+                }
+            }
+        }
+
 
         if (!newState.player.isDead) {
             score += this.evaluatePlayer(newState);
@@ -761,12 +773,17 @@ class State {
             var currentElAtPos = getValAt(boardMatrix, nextPos);
             var done = false;
             if (PLAYER_TAIL.indexOf(currentElAtPos) > -1) {
-                snakeElements.push({
-                    pos: nextPos,
-                    type: currentElAtPos
-                });
                 setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
-                break;
+                if (isOtherBodyPartsAround(headPos, boardMatrix)) {
+                    setValAtMut(boardMatrix, nextPos, currentElAtPos);
+                } else {
+                    snakeElements.push({
+                        pos: nextPos,
+                        type: currentElAtPos
+                    });
+                    break;
+                }
+
             }
             // other body parts
 

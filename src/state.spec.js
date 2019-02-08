@@ -45,6 +45,41 @@ describe("State", () => {
             var score = newState.state.step(COMMANDS.RIGHT, COMMANDS.UP, 0);
             expect(score.score).toEqual(-State.SCORE_FOR_DEATH);
         });
+        it('case5',() => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼        ●                  ☼" +
+            "☼#                           ☼" +
+            "☼☼       ●                   ☼" +
+            "☼☼                           ☼" +
+            "☼☼                          ○☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼                     ☼" +
+            "☼#     ☼☼☼      ○ ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼      ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼   ○      ●     ☼     ○    ☼" +
+            "☼☼    ●   ○       ☼        ○ ☼" +
+            "☼☼ ©  ●                      ☼" +
+            "☼#                ○          ☼" +
+            "☼☼                           ☼" +
+            "☼☼        ☼☼☼              $ ☼" +
+            "☼☼       ☼  ☼æ               ☼" +
+            "☼☼      ☼☼☼☼#│    ☼☼   ☼#    ☼" +
+            "☼☼      ☼   ☼│  ● ☼ ☼ ☼ ☼ ○  ☼" +
+            "☼#      ☼   ☼│    ☼  ☼  ☼    ☼" +
+            "☼☼╘╗        ●│    ☼     ☼    ☼" +
+            "☼☼◄╝   ●┌────┘    ☼     ☼    ☼" +
+            "☼☼ ┌───┐│               ○    ☼" +
+            "☼☼ └─> └┘           ○        ☼" +
+            "☼☼               ○       ○   ☼" +
+            "☼#          ●                ☼" +
+            "☼☼      ○       ○○    ○      ☼" +
+            "☼☼   ○      ○                ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼"
+            var state = State.getState(board);
+            expect(state.player.elements.length).toEqual(4);
+
+        });
 
         it("should keep away form evil enemy", () => {
             const board =

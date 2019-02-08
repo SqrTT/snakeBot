@@ -18,43 +18,47 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, score) {
         return ['NO', score];
     } else {
         var playerSteps = state.player.nextSteps;
-        var betterScore = -Infinity;
+        var betterScore = ['NO', -Infinity];
+        var playerBetter = alpha;
         for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
-            if (state.enemies && state.enemies.length) {
-                var enemySteps = state.enemies[enemyIdx].nextSteps;
-                var enemyBetter = beta;
-                for (var enemyStepsIdx = enemySteps.length - 1; enemyStepsIdx >= 0; enemyStepsIdx--) {
 
-                    var emulationStep = state.step(
-                        playerSteps[playerStepsIdx],
-                        enemySteps[enemyStepsIdx],
-                        enemyIdx
-                    );
+            var enemySteps = state.enemies[enemyIdx].nextSteps;
+            var enemyBetter = beta;
 
-                    var next = AlphaBetaMulti(
-                        depth - 1,
-                        emulationStep.state,
-                        enemyIdx,
-                        alpha,
-                        beta,
-                        (emulationStep.score * depth / 10) + score
-                    );
+            for (var enemyStepsIdx = enemySteps.length - 1; enemyStepsIdx >= 0; enemyStepsIdx--) {
 
-                    if (next[SCORE] < enemyBetter[SCORE]) {
-                        enemyBetter = [enemySteps[enemyStepsIdx], next[SCORE]];
-                    }
+                var emulationStep = state.step(
+                    playerSteps[playerStepsIdx],
+                    enemySteps[enemyStepsIdx],
+                    enemyIdx
+                );
 
-                }
-                if (enemyBetter[SCORE] > alpha[SCORE]) {
-                    alpha = [playerSteps[playerStepsIdx], enemyBetter[SCORE]];
-                }
-
-                // if (alpha[SCORE] >= beta[SCORE]) {
-                //     break;
+                var next = AlphaBetaMulti(
+                    depth - 1,
+                    emulationStep.state,
+                    enemyIdx,
+                    alpha,
+                    beta,
+                    (emulationStep.score * depth * depth) + score
+                );
+                // if (next[SCORE] > betterScore[SCORE]) {
+                //     betterScore = [playerSteps[playerStepsIdx], next[SCORE]];
                 // }
+                if (next[SCORE] < enemyBetter[SCORE]) {
+                    enemyBetter = [enemySteps[enemyStepsIdx], next[SCORE]];
+                }
+
             }
+            if (enemyBetter[SCORE] > playerBetter[SCORE]) {
+                playerBetter = [playerSteps[playerStepsIdx], enemyBetter[SCORE]];
+            }
+
+            // if (alpha[SCORE] >= beta[SCORE]) {
+            //     break;
+            // }
+
         }
-        return alpha;
+        return playerBetter;
     }
 }
 
