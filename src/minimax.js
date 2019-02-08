@@ -12,17 +12,17 @@ const ANSWER = 0,
  *
  * @returns {[string, number]}
  */
-function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, scorePlayer, scoreEnemy) {
+function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, score) {
 
     if (depth < 1) {
-        return ['NO', scorePlayer + scoreEnemy];
+        return ['NO', score];
     } else {
         var playerSteps = state.player.nextSteps;
-
+        var betterScore = -Infinity;
         for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
             if (state.enemies && state.enemies.length) {
                 var enemySteps = state.enemies[enemyIdx].nextSteps;
-                var next = ['NO', 0];
+                var enemyBetter = beta;
                 for (var enemyStepsIdx = enemySteps.length - 1; enemyStepsIdx >= 0; enemyStepsIdx--) {
 
                     var emulationStep = state.step(
@@ -31,26 +31,27 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, scorePlayer, scoreE
                         enemyIdx
                     );
 
-                    next = AlphaBetaMulti(
+                    var next = AlphaBetaMulti(
                         depth - 1,
                         emulationStep.state,
                         enemyIdx,
                         alpha,
                         beta,
-                        (emulationStep.playerScore * depth / 10) + scorePlayer,
-                        (emulationStep.enemiesScore * depth / 10 + scoreEnemy)
+                        (emulationStep.score * depth / 10) + score
                     );
-                    if (next[SCORE] > alpha[SCORE]) {
-                        alpha = [playerSteps[playerStepsIdx], next[SCORE]];
-                    }
-                    if (next[SCORE] < beta[SCORE]) {
-                        beta = [enemySteps[enemyStepsIdx], next[SCORE]];
+
+                    if (next[SCORE] < enemyBetter[SCORE]) {
+                        enemyBetter = [enemySteps[enemyStepsIdx], next[SCORE]];
                     }
 
-                    if (alpha[SCORE] >= beta[SCORE]) {
-                        break;
-                    }
                 }
+                if (enemyBetter[SCORE] > alpha[SCORE]) {
+                    alpha = [playerSteps[playerStepsIdx], enemyBetter[SCORE]];
+                }
+
+                // if (alpha[SCORE] >= beta[SCORE]) {
+                //     break;
+                // }
             }
         }
         return alpha;

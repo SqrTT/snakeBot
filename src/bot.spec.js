@@ -14,7 +14,7 @@ describe("bot", () => {
         beforeEach(() => {
             resetState();
         })
-        xit("should avoid enemy potential step", () => {
+        it("should avoid enemy potential step", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
                 '#        ☼' +

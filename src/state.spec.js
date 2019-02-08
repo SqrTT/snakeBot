@@ -23,7 +23,7 @@ describe("State", () => {
             expect(state.enemies[0].elements.length).toEqual(4);
             var nextState = state.step(COMMANDS.DOWN, COMMANDS.RIGHT, 0)
 
-            expect(nextState.playerScore).toEqual(-State.SCORE_FOR_DEATH);
+            expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH);
         });
 
         it("should keep away form evil enemy", () => {
@@ -43,7 +43,7 @@ describe("State", () => {
             var state = State.getState(board);
             var newState = state.step(COMMANDS.RIGHT, COMMANDS.RIGHT, 0);
             var score = newState.state.step(COMMANDS.RIGHT, COMMANDS.UP, 0);
-            expect(score.enemiesScore).toEqual(-State.SCORE_FOR_DEATH);
+            expect(score.score).toEqual(-State.SCORE_FOR_DEATH);
         });
 
         it("should keep away form evil enemy", () => {
@@ -61,7 +61,7 @@ describe("State", () => {
             //æ──>
             var state = State.getState(board);
             var nextState = state.step(COMMANDS.DOWN, COMMANDS.RIGHT, 0);
-            expect(nextState.playerScore).toEqual(-State.SCORE_FOR_DEATH);
+            expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH);
         });
 
         it("should prevent step on enemy", () => {
@@ -80,7 +80,7 @@ describe("State", () => {
             var state = State.getState(board);
             var res = state.step(COMMANDS.RIGHT, COMMANDS.RIGHT, 0);
             var enemyState = res.state.step(COMMANDS.UP, COMMANDS.UP, 0);
-            expect(enemyState.enemiesScore).toEqual(-State.SCORE_FOR_DEATH);
+            expect(enemyState.score).toEqual(-State.SCORE_FOR_DEATH);
         });
         it("should prevent step on enemy", () => {
             const board =
@@ -100,7 +100,7 @@ describe("State", () => {
 
             var res = state.step(COMMANDS.UP, COMMANDS.RIGHT, 0);
 
-            expect(res.playerScore).toEqual(0);
+            expect(res.score).toEqual(0);
             // move whole body
             expect(res.state.player.elements[0].getX()).toEqual(2);
             expect(res.state.player.elements[0].getY()).toEqual(7);
@@ -125,7 +125,7 @@ describe("State", () => {
             var state = State.getState(board);
             var res = state.step(COMMANDS.RIGHT, COMMANDS.DOWN, 0);
 
-            expect(res.enemiesScore).toEqual(State.SCORE_FOR_DEATH);
+            expect(res.score).toEqual(State.SCORE_FOR_DEATH);
         });
 
         it("should find head correctly", () => {
@@ -205,9 +205,7 @@ describe("State", () => {
             expect(state.player.elements.length).toEqual(7);
 
             var resPlay = state.step(COMMANDS.RIGHT, COMMANDS.LEFT, 0);
-            expect(resPlay.playerScore).toEqual(-State.SCORE_FOR_DEATH);
-            expect(resPlay.enemiesScore).toEqual(-70);
-
+            expect(resPlay.score).toEqual(-State.SCORE_FOR_DEATH);
 
 
         });

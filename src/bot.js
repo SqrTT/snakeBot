@@ -81,7 +81,12 @@ function getNextSnakeMoveInner(board, logger, logState) {
 
     logger(`turn: ${turnsCount} x:${currentState.player.head.pos[0]} y: ${currentState.player.head.pos[1]} evil: ${currentState.player.furyCount} fly: ${currentState.player.flyCount}`);
     var selfSize = currentState.player.elements.length;
-    var enemiesSize = 0;
+    var maxEnemiesSize = 0;
+    currentState.enemies.forEach(en => {
+        if (maxEnemiesSize < en.elements.length) {
+            maxEnemiesSize = en.elements.length;
+        }
+    });
 
     logger(`Size: ${selfSize}`);
 
@@ -92,15 +97,15 @@ function getNextSnakeMoveInner(board, logger, logState) {
     } else if (currentState.player.furyCount > 0) {
         mode = 'evil';
     }
-    var scareEnemyes = mode !== 'evil' || currentState.player.elements.length >= enemiesSize + 2;
-    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, scareEnemyes, mode);
+    var eatStones = mode === 'evil' || currentState.player.elements.length >= maxEnemiesSize + 2;
+    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, eatStones, mode);
     logger('path count: ' + JSON.stringify(directions.length));
 
     var el;
     var ACT = mode === 'evil' ? 'ACT,' : '';
     var closestEnemy = currentState.getClosestEnemy()
 
-    if ((currentState.enemies.length === 1 || closestEnemy.distance < 7) && closestEnemy.enemy) {
+    if ((closestEnemy.distance < 7) && closestEnemy.enemy) {
         logger('> attack mode <\n ' + closestEnemy.distance);
         var enIdx = 0;
 
@@ -113,7 +118,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             }
         })
         // debugger;
-        var res = AlphaBetaMulti(8, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+        var res = AlphaBetaMulti(5, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0);
         logger(`Enemy size: ${currentState.enemies[enIdx].elements.length}`);
         logger(`Attack score: ${res[1]} - ${res[0]}`);
         if (res[0] !== 'NO') {
@@ -134,7 +139,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('extra short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
+    } else if (selfSize >= maxEnemiesSize + 3 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
         logger('short self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -150,7 +155,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= EATING_STONE_SIZE && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
+    } else if (selfSize >= maxEnemiesSize + 3 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
         logger('self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -225,7 +230,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
 }
 
 
-function getDirections(board, headPosition, selfSize, rateElement, findFloor = false, countOnEnemyHeads = true, mode = 'normal') {
+function getDirections(board, headPosition, selfSize, rateElement, findFloor = false, eatStones = true, mode = 'normal') {
     const directions = [];
     const boardSize = getBoardSize(board);
 
@@ -254,7 +259,7 @@ function getDirections(board, headPosition, selfSize, rateElement, findFloor = f
             } else {
                 return 0;
             }
-        } else if (x === ELEMENT.STONE && mode === 'normal' && selfSize < EATING_STONE_SIZE + 1) {
+        } else if (x === ELEMENT.STONE && mode === 'normal' && !eatStones) {
             return 1;
         } else if (isSelf(x)) {
             return 1;

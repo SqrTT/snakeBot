@@ -22,9 +22,9 @@ describe("MiniMax", () => {
                 '☼☼☼☼☼☼☼☼☼☼☼☼';
             //æ──>
             var state = State.getState(board);
-            // var newState = state.enemyStep(COMMANDS.RIGHT, 0);
+             var newState = state.step(COMMANDS.RIGHT, COMMANDS.RIGHT, 0);
            // debugger;
-            var res = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+            var res = AlphaBetaMulti(1, newState.state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
 
             expect(res[0]).toEqual(COMMANDS.UP);
         });
@@ -44,7 +44,7 @@ describe("MiniMax", () => {
             //æ──>
             //debugger;
             var state = State.getState(board);
-            const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+            const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
             expect(move[0]).toEqual(COMMANDS.RIGHT);
         });
 
@@ -82,7 +82,7 @@ describe("MiniMax", () => {
 
                 var state = State.getState(board);
                 //debugger;
-                const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
+                const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
                 expect(move[0]).not.toEqual(COMMANDS.LEFT);
         });
 
@@ -102,8 +102,9 @@ describe("MiniMax", () => {
             //debugger;
             var state = State.getState(board);
             state.enemies[0].furyCount = 5;
-            const move = AlphaBetaMulti(6, state, 0, ['NO', -Infinity], ['NO', Infinity], 0, 0);
-            expect(move[0]).not.toEqual(COMMANDS.UP);
+            ///debugger;
+            const move = AlphaBetaMulti(1, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+            expect(move[0]).toEqual(COMMANDS.UP);
 
         });
 

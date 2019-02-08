@@ -513,12 +513,16 @@ class Snake {
         return this.contains(pos);
     }
     contains(pos) {
-        for (var idx = this.elements.length - 1; idx >= 0; idx--) {
-            if (isSamePos(this.elements[idx].pos, pos)) {
-                return true;
+        if (this.isDead) {
+            return false;
+        } else {
+            for (var idx = this.elements.length - 1; idx >= 0; idx--) {
+                if (isSamePos(this.elements[idx].pos, pos)) {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 }
 exports.Snake = Snake;
@@ -559,7 +563,22 @@ class State {
     toString() {
         var board = this.boardMatrix;
         this.getSnakesElements().forEach((el) => {
-            board = setValAt(board, el.pos, el.type);
+            var val = el.type;
+            if (el.owner.furyCount && el.isSame(el.owner.head.pos)) {
+                if (el.owner.isSelf(this.player.head.pos)) {
+                    val = ELEMENT.HEAD_EVIL;
+                } else {
+                    val = ELEMENT.ENEMY_HEAD_EVIL;
+                }
+            }
+            if (el.owner.flyCount && el.isSame(el.owner.head.pos)) {
+                if (el.owner.isSelf(this.player.head.pos)) {
+                    val = ELEMENT.HEAD_FLY;
+                } else {
+                    val = ELEMENT.ENEMY_HEAD_EVIL;
+                }
+            }
+            board = setValAt(board, el.pos, val);
         });
         return board.map(row => row.join('')).join('\n');
     }
@@ -637,16 +656,12 @@ class State {
      * @param {string} action
      */
     step(playerAction, action, enemyID) {
-        /**
-         * @type {number}
-         */
-        var enemiesScore = 0;
         var newState = new State();
         newState.boardMatrix = this.boardMatrix;
         /**
          * @type {number}
          */
-        var playerScore = 0;
+        var score = 0;
         /**
          * @type {Snake|undefined}
          */
@@ -673,27 +688,22 @@ class State {
             // enemy hits player
             if (enemy.furyCount && !newState.player.furyCount) {
                 newState.player.isDead = true;
-                playerScore = -State.SCORE_FOR_DEATH;
-                enemiesScore = -State.SCORE_FOR_DEATH;
+                score = -State.SCORE_FOR_DEATH;
             } else if (!enemy.furyCount && newState.player.furyCount) {
                 enemy.isDead = true;
-                playerScore = State.SCORE_FOR_DEATH;
-                enemiesScore = State.SCORE_FOR_DEATH;
+                score = State.SCORE_FOR_DEATH;
             } else {
                 if (enemy.head.isSame(newState.player.head.pos) || newState.player.isNeck(enemy.head.pos)) {
                     if (enemy.elements.length - newState.player.elements.length >= 2) {
-                        enemiesScore = -newState.player.elements.length * State.SCORE_ELEMENT;
-                        playerScore = -State.SCORE_FOR_DEATH;
+                        score = -newState.player.elements.length * State.SCORE_ELEMENT;
                         newState.player.isDead = true;
                     } else {
-                        playerScore = -State.SCORE_FOR_DEATH;
-                        enemiesScore = State.SCORE_FOR_DEATH;
+                        score = -State.SCORE_FOR_DEATH;
                         enemy.isDead = true;
                         newState.player.isDead = true;
                     }
                 } else {
-                    enemiesScore = State.SCORE_FOR_DEATH;
-                    playerScore = State.SCORE_FOR_DEATH;
+                    score = State.SCORE_FOR_DEATH;
                     enemy.isDead = true;
                 }
             }
@@ -702,43 +712,36 @@ class State {
         if (!newState.player.isDead && enemy.contains(newState.player.head.pos) && newState.player.flyCount === 0) {
             if (enemy.furyCount && !newState.player.furyCount) {
                 newState.player.isDead = true;
-                playerScore = -State.SCORE_FOR_DEATH;
-                enemiesScore = -State.SCORE_FOR_DEATH;
+                score = -State.SCORE_FOR_DEATH;
             } else if (!enemy.furyCount && newState.player.furyCount) {
                 enemy.isDead = true;
-                playerScore = State.SCORE_FOR_DEATH;
-                enemiesScore = State.SCORE_FOR_DEATH;
+                score = State.SCORE_FOR_DEATH;
             } else {
                 if (newState.player.head.isSame(enemy.head.pos) || enemy.isNeck(newState.player.head.pos)) {
                     if (newState.player.elements.length - enemy.elements.length >= 2) {
-                        enemiesScore = State.SCORE_FOR_DEATH;
-                        playerScore = newState.player.elements.length * State.SCORE_ELEMENT;
+                        score = newState.player.elements.length * State.SCORE_ELEMENT;
                         enemy.isDead = true;
                     } else {
-                        enemiesScore = State.SCORE_FOR_DEATH;
-                        playerScore = -State.SCORE_FOR_DEATH;
+                        score = -State.SCORE_FOR_DEATH - 0.1;
                         enemy.isDead = true;
                         newState.player.isDead = true;
                     }
                 } else {
-                    enemiesScore = -State.SCORE_FOR_DEATH;
-                    playerScore = -State.SCORE_FOR_DEATH;
+                    score = -State.SCORE_FOR_DEATH - 0.1;
                     newState.player.isDead = true;
                 }
             }
         }
 
         if (!newState.player.isDead) {
-            playerScore += this.evaluatePlayer(newState);
+            score += this.evaluatePlayer(newState);
         }
         if (!enemy.isDead) {
-            enemiesScore -= this.evaluateEnemy(enemy, newState);
+            score -= this.evaluateEnemy(enemy, newState);
         }
 
-
         return {
-            playerScore,
-            enemiesScore,
+            score,
             state: newState
         };
     }
