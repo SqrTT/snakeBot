@@ -99,6 +99,46 @@ describe("State", () => {
             expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH);
         });
 
+        it('count on growinf tail', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼         ○                 ☼" +
+            "☼#         ˄                 ☼" +
+            "☼☼       ● │       ○         ☼" +
+            "☼☼       ▲×┘          ○ ○    ☼" +
+            "☼☼      ╘╝   ●    ○          ☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼          ●          ☼" +
+            "☼#     ☼☼☼     ○  ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼  ●   ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼                ☼          ☼" +
+            "☼☼                ☼         $☼" +
+            "☼☼    ●  ○              ®    ☼" +
+            "☼#             ○      ○      ☼" +
+            "☼☼           ○               ☼" +
+            "☼☼        ☼☼☼                ☼" +
+            "☼☼   ○   ☼  ☼                ☼" +
+            "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼" +
+            "☼☼      ☼   ☼   ● ☼ ☼ ☼ ☼ ○  ☼" +
+            "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼                ☼     ☼    ☼" +
+            "☼☼     ●          ☼     ☼  ● ☼" +
+            "☼☼                           ☼" +
+            "☼☼                  ○        ☼" +
+            "☼☼ ○    ○    ○ ●         ○   ☼" +
+            "☼#                           ☼" +
+            "☼☼               ○           ☼" +
+            "☼☼                           ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+            var state = State.getState(board);
+            expect(state.enemies[0].elements.length).toEqual(4);
+
+            var nextState = state.step(COMMANDS.RIGHT, COMMANDS.UP, 0);
+            expect(nextState.state.enemies[0].elements.length).toEqual(5);
+
+        })
+
         it("should prevent step on enemy", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +

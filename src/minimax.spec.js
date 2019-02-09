@@ -128,7 +128,7 @@ describe("MiniMax", () => {
             const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
                 "☼☼         ○                 ☼" +
                 "☼#      ○                    ☼" +
-                "☼☼       ●            ×─>    ☼" +
+                "☼☼       ●                   ☼" +
                 "☼☼                      ○    ☼" +
                 "☼☼           ●               ☼" +
                 "☼☼┌──┐ ☼☼☼☼☼                 ☼" +
@@ -156,11 +156,88 @@ describe("MiniMax", () => {
                 "☼☼○           ○              ☼" +
                 "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
 
+            var state = State.getState(board);
+            expect(state.enemies[0].elements.length).toEqual(8);
+
+            const move = AlphaBetaMulti(5, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+            expect(move[0]).not.toEqual(COMMANDS.UP);
+        });
+
+        it('count on growing tail', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼         ○                 ☼" +
+            "☼#         ˄                 ☼" +
+            "☼☼       ● │       ○         ☼" +
+            "☼☼       ▲×┘          ○ ○    ☼" +
+            "☼☼      ╘╝   ●    ○          ☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼          ●          ☼" +
+            "☼#     ☼☼☼     ○  ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼  ●   ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼                ☼          ☼" +
+            "☼☼                ☼         $☼" +
+            "☼☼    ●  ○              ®    ☼" +
+            "☼#             ○      ○      ☼" +
+            "☼☼           ○               ☼" +
+            "☼☼        ☼☼☼                ☼" +
+            "☼☼   ○   ☼  ☼                ☼" +
+            "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼" +
+            "☼☼      ☼   ☼   ● ☼ ☼ ☼ ☼ ○  ☼" +
+            "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼                ☼     ☼    ☼" +
+            "☼☼     ●          ☼     ☼  ● ☼" +
+            "☼☼                           ☼" +
+            "☼☼                  ○        ☼" +
+            "☼☼ ○    ○    ○ ●         ○   ☼" +
+            "☼#                           ☼" +
+            "☼☼               ○           ☼" +
+            "☼☼                           ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+            var state = State.getState(board);
+            expect(state.enemies[0].elements.length).toEqual(4);
+
+            const move = AlphaBetaMulti(5, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+            expect(move[0]).not.toEqual(COMMANDS.RIGHT);
+        })
+
+        it('cut tail', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼                         ○ ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼               æ           ☼" +
+                "☼☼            ○  └─────────> ☼" +
+                "☼☼     ☼☼☼☼☼     ○          $☼" +
+                "☼☼    ©☼                     ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+                "☼☼     ☼          ☼   ☼  ●   ☼" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#◄╗    ☼" +
+                "☼☼                ☼    ╔╝    ☼" +
+                "☼☼     ○○         ☼    ║     ☼" +
+                "☼☼    ●  ○             ║     ☼" +
+                "☼#○                 ●  ║     ☼" +
+                "☼☼                     ║     ☼" +
+                "☼☼©      ○☼☼☼       ╘══╝     ☼" +
+                "☼☼       ☼ ○☼               ○☼" +
+                "☼☼      ☼☼☼☼#  ●  ☼☼   ☼# ○  ☼" +
+                "☼☼      ☼   ☼   ● ☼ ☼ ☼ ☼○   ☼" +
+                "☼#      ☼   ☼●    ☼  ☼  ☼    ☼" +
+                "☼☼           ●    ☼     ☼®   ☼" +
+                "☼☼   ○            ☼     ☼    ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼#            ○              ☼" +
+                "☼☼                           ☼" +
+                "☼☼                         ● ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
                 var state = State.getState(board);
 
-                const move = AlphaBetaMulti(5, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
-                expect(move[0]).not.toEqual(COMMANDS.UP);
-        })
+                const move = AlphaBetaMulti(4, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+                expect(move[0]).not.toEqual(COMMANDS.DOWN);
+        });
 
         it("should keep away form evil enemy", () => {
             const board =

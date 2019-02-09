@@ -375,6 +375,17 @@ function isOtherBodyPartsAround(pos, boardMatrix) {
     }
     return false;
 }
+function isOtherEnemyBodyPartsAround(pos, boardMatrix) {
+    for (var dir = COMMANDS_LIST.length - 1; dir >= 0; --dir) {
+        var currentDir = COMMANDS_LIST[dir];
+        var nextPos = sum(pos, DIRECTIONS_MAP[currentDir]);
+        if (ENEMY_BODY.indexOf(getValAt(boardMatrix, nextPos)) > -1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 const scoreForOneElement = 10;
 /**
  * @param {string[][]} board
@@ -629,7 +640,7 @@ class State {
         var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
         if (elAtPos === ELEMENT.NONE) {
             if (newState.player.bodyContains(newState.player.head.pos)) {
-                playerScore = -5;
+                playerScore = -State.SCORE_FOR_DEATH / 2;
             } else {
                 playerScore = 0;
             }
@@ -655,6 +666,7 @@ class State {
         } else if (elAtPos === ELEMENT.APPLE) {
             newState.player.elements.unshift(this.player.elements[0]);// restore old tail
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+            playerScore = 100;
         } else {// check other els
             playerScore = EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
@@ -677,7 +689,7 @@ class State {
         var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
         if (elAtPos === ELEMENT.NONE) {
             if (enemy.bodyContains(enemy.head.pos)) {
-                enemyScore = 5;
+                enemyScore = State.SCORE_FOR_DEATH / 2;
             } else {
                 enemyScore = 0;
             }
@@ -702,8 +714,9 @@ class State {
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else if (elAtPos === ELEMENT.APPLE) {
             newState.enemies[idx].elements.unshift(this.enemies[idx].elements[0]);// restore old tail
+            enemyScore = -100;
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
-        }  else {// check other els
+        } else {// check other els
             enemyScore = -EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, enemy.head.pos, ELEMENT.NONE);
         }
@@ -742,56 +755,8 @@ class State {
         if (!enemy) {
             throw Error('Enemy not found');
         }
-        // player hits enemy
-        if (!newState.player.isDead && enemy.contains(newState.player.head.pos) && newState.player.flyCount === 0) {
-            if (enemy.furyCount && !newState.player.furyCount) {
-                newState.player.isDead = true;
-                score = -State.SCORE_FOR_DEATH;
-            } else if (!enemy.furyCount && newState.player.furyCount) {
-                enemy.isDead = true;
-                score = State.SCORE_FOR_DEATH;
-            } else {
-                if (newState.player.head.isSame(enemy.head.pos) || enemy.isNeck(newState.player.head.pos)) {
-                    if (newState.player.elements.length - enemy.elements.length >= 2) {
-                        score = newState.player.elements.length * State.SCORE_ELEMENT;
-                        enemy.isDead = true;
-                    } else {
-                        score = -State.SCORE_FOR_DEATH;
-                        enemy.isDead = true;
-                        newState.player.isDead = true;
-                    }
-                } else {
-                    score = -State.SCORE_FOR_DEATH;
-                    newState.player.isDead = true;
-                }
-            }
-        }
-        ////// snakesFight
-        if (!enemy.isDead && newState.player.contains(enemy.head.pos) && enemy.flyCount === 0) {
-            // enemy hits player
-            if (enemy.furyCount && !newState.player.furyCount) {
-                newState.player.isDead = true;
-                score = -State.SCORE_FOR_DEATH;
-            } else if (!enemy.furyCount && newState.player.furyCount) {
-                enemy.isDead = true;
-                score = State.SCORE_FOR_DEATH;
-            } else {
-                if (enemy.head.isSame(newState.player.head.pos) || newState.player.isNeck(enemy.head.pos)) {
-                    if (enemy.elements.length - newState.player.elements.length >= 2) {
-                        score = -State.SCORE_FOR_DEATH;
-                        newState.player.isDead = true;
-                    } else {
-                        score = -State.SCORE_FOR_DEATH;
-                        enemy.isDead = true;
-                        newState.player.isDead = true;
-                    }
-                } else {
-                    score = State.SCORE_FOR_DEATH;
-                    enemy.isDead = true;
-                }
-            }
-        }
 
+       var firstFight = score = this.snakesFight(newState, enemy, score);
 
         if (!newState.player.isDead) {
             score += this.evaluatePlayer(newState);
@@ -799,12 +764,73 @@ class State {
         if (!enemy.isDead) {
             score += this.evaluateEnemy(enemy, newState, enemyID);
         }
+        score += this.snakesFight(newState, enemy, score) - firstFight;
 
         return {
             score,
             state: newState
         };
     }
+    snakesFight(newState, enemy, score) {
+        if (!newState.player.isDead && enemy.contains(newState.player.head.pos) && newState.player.flyCount === 0) {
+            if (enemy.furyCount && !newState.player.furyCount) {
+                newState.player.isDead = true;
+                score = -State.SCORE_FOR_DEATH;
+            }
+            else if (!enemy.furyCount && newState.player.furyCount) {
+                enemy.isDead = true;
+                score = State.SCORE_FOR_DEATH;
+            }
+            else {
+                if (newState.player.head.isSame(enemy.head.pos) || enemy.isNeck(newState.player.head.pos)) {
+                    if (newState.player.elements.length - enemy.elements.length >= 2) {
+                        score = newState.player.elements.length * State.SCORE_ELEMENT;
+                        enemy.isDead = true;
+                    }
+                    else {
+                        score = -State.SCORE_FOR_DEATH;
+                        enemy.isDead = true;
+                        newState.player.isDead = true;
+                    }
+                }
+                else {
+                    score = -State.SCORE_FOR_DEATH;
+                    newState.player.isDead = true;
+                }
+            }
+        }
+        //////
+        if (!enemy.isDead && newState.player.contains(enemy.head.pos) && enemy.flyCount === 0) {
+            // enemy hits player
+            if (enemy.furyCount && !newState.player.furyCount) {
+                newState.player.isDead = true;
+                score = -State.SCORE_FOR_DEATH;
+            }
+            else if (!enemy.furyCount && newState.player.furyCount) {
+                enemy.isDead = true;
+                score = State.SCORE_FOR_DEATH;
+            }
+            else {
+                if (enemy.head.isSame(newState.player.head.pos) || newState.player.isNeck(enemy.head.pos)) {
+                    if (enemy.elements.length - newState.player.elements.length >= 2) {
+                        score = -State.SCORE_FOR_DEATH;
+                        newState.player.isDead = true;
+                    }
+                    else {
+                        score = -State.SCORE_FOR_DEATH;
+                        enemy.isDead = true;
+                        newState.player.isDead = true;
+                    }
+                }
+                else {
+                    score = State.SCORE_FOR_DEATH;
+                    enemy.isDead = true;
+                }
+            }
+        }
+        return score;
+    }
+
     /**
      *
      * @param {[number, number]} headPos
@@ -883,12 +909,15 @@ class State {
             var done = false;
             // other body parts
             if (ENEMY_TAIL.indexOf(currentElAtPos) > -1) {
-                snakeElements.push({
-                    pos: nextPos,
-                    type: currentElAtPos
-                });
-                setValAtMut(boardMatrix, nextPos, ELEMENT.NONE);
-                break;
+                if (isOtherEnemyBodyPartsAround(headPos, boardMatrix)) {
+                    setValAtMut(boardMatrix, nextPos, currentElAtPos);
+                } else {
+                    snakeElements.push({
+                        pos: nextPos,
+                        type: currentElAtPos
+                    });
+                    break;
+                }
             }
             while (isEnemy(currentElAtPos) && ENEMY_BODY_MATRIX[OPPOSITE_MAP[currentDir] + currentElAtPos]) {
                 snakeElements.push({

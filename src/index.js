@@ -148,7 +148,18 @@ if (saveLogBtn) {
         FileSaver.saveAs(blob, `snake-log-${(new Date().toISOString())}.json`);
     });
 }
-
+function getBoardAsArray(board) {
+    var size = Math.sqrt(board.length);
+    /**
+     * @type {string[]}
+     */
+    var result = [];
+    for (var i = 0; i < size; i++) {
+        result.push(board.substring(i * size, (i + 1) * size));
+    }
+    return result.join('" + \n"');
+}
+window.getBoardAsArray = getBoardAsArray;
 
 // var socketScore = new WebSocket('wss://game1.epam-bot-challenge.com.ua/codenjoy-contest/screen-ws?user=tolik@sqrtt.pro');
 

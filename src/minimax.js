@@ -18,7 +18,7 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, score) {
         return ['NO', score];
     } else {
         var playerSteps = state.player.nextSteps;
-        var betterScore = ['NO', -Infinity];
+
         var playerBetter = alpha;
         for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
 
@@ -39,7 +39,7 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, score) {
                     enemyIdx,
                     alpha,
                     beta,
-                    (emulationStep.score * depth * depth) + score
+                    (emulationStep.score * depth) + score
                 );
 
                 enemyBetter = [enemySteps[enemyStepsIdx], next[SCORE] + enemyBetter[SCORE]];

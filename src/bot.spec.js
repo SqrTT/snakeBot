@@ -31,7 +31,7 @@ describe("bot", () => {
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).not.toEqual(COMMANDS.RIGHT);
         });
-        xit("should attack enemy close path", () => {
+        it("should attack enemy close path", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
                 '☼        ☼' +
