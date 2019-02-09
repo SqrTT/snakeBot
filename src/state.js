@@ -170,11 +170,11 @@ var EVALUATION_MAP = {
         [ELEMENT.START_FLOOR]: -50,
         [ELEMENT.OTHER]: -50,
 
-        [ELEMENT.APPLE]: 1,
+        [ELEMENT.APPLE]: 10,
         [ELEMENT.STONE]: -50,
-        [ELEMENT.FLYING_PILL]: 1,
-        [ELEMENT.FURY_PILL]: 10,
-        [ELEMENT.GOLD]: 5,
+        [ELEMENT.FLYING_PILL]: 0,
+        [ELEMENT.FURY_PILL]: 0,
+        [ELEMENT.GOLD]: 10,
         [ELEMENT.TAIL_END_DOWN]: -10,
         [ELEMENT.TAIL_END_LEFT]: -10,
         [ELEMENT.TAIL_END_UP]: -10,
@@ -222,10 +222,10 @@ var EVALUATION_MAP = {
         [ELEMENT.OTHER]: -50,
 
         [ELEMENT.APPLE]: 1,
-        [ELEMENT.STONE]: 10,
+        [ELEMENT.STONE]: 5,
         [ELEMENT.FLYING_PILL]: 1,
         [ELEMENT.FURY_PILL]: 1,
-        [ELEMENT.GOLD]: 5,
+        [ELEMENT.GOLD]: 10,
         [ELEMENT.TAIL_END_DOWN]: -10,
         [ELEMENT.TAIL_END_LEFT]: -10,
         [ELEMENT.TAIL_END_UP]: -10,
@@ -276,7 +276,7 @@ var EVALUATION_MAP = {
         [ELEMENT.STONE]: 0,
         [ELEMENT.FLYING_PILL]: 1,
         [ELEMENT.FURY_PILL]: 10,
-        [ELEMENT.GOLD]: 5,
+        [ELEMENT.GOLD]: 10,
         [ELEMENT.TAIL_END_DOWN]: 0,
         [ELEMENT.TAIL_END_LEFT]: 0,
         [ELEMENT.TAIL_END_UP]: 0,
@@ -523,6 +523,18 @@ class Snake {
     isSelf(pos) {
         return this.contains(pos);
     }
+    bodyContains(pos) {
+        if (this.isDead) {
+            return false;
+        } else {
+            for (var idx = this.elements.length - 2; idx >= 0; idx--) {
+                if (isSamePos(this.elements[idx].pos, pos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
     contains(pos) {
         if (this.isDead) {
             return false;
@@ -616,7 +628,11 @@ class State {
         }
         var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
         if (elAtPos === ELEMENT.NONE) {
-            playerScore = 0;
+            if (newState.player.bodyContains(newState.player.head.pos)) {
+                playerScore = -5;
+            } else {
+                playerScore = 0;
+            }
         } else if (elAtPos === ELEMENT.FLYING_PILL) {
             newState.player.flyCount += 10;
             playerScore = EVALUATION_MAP[mode][elAtPos];
@@ -624,6 +640,17 @@ class State {
         } else if (elAtPos === ELEMENT.FURY_PILL) {
             newState.player.furyCount += 10;
             playerScore = EVALUATION_MAP[mode][elAtPos];
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        } else if (elAtPos === ELEMENT.STONE) {
+            if (this.player.elements.length >= 5) {
+                //reduce length
+                this.player.elements.shift();
+                this.player.elements.shift();
+                this.player.elements.shift();
+                playerScore = 5;
+            } else {
+                playerScore = -State.SCORE_FOR_DEATH;
+            }
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else {// check other els
             playerScore = EVALUATION_MAP[mode][elAtPos];
@@ -646,7 +673,11 @@ class State {
         }
         var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
         if (elAtPos === ELEMENT.NONE) {
-            return 0;
+            if (enemy.bodyContains(enemy.head.pos)) {
+                enemyScore = 5;
+            } else {
+                enemyScore = 0;
+            }
         } else if (elAtPos === ELEMENT.FLYING_PILL) {
             enemy.flyCount += 10;
             enemyScore = -EVALUATION_MAP[mode][elAtPos];
@@ -655,7 +686,18 @@ class State {
             enemy.furyCount += 10;
             enemyScore = -EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, enemy.head.pos, ELEMENT.NONE);
-        } else {// check other els
+        } else if (elAtPos === ELEMENT.STONE) {
+            if (enemy.elements.length >= 5) {
+                //reduce length
+                enemy.elements.shift();
+                enemy.elements.shift();
+                enemy.elements.shift();
+                enemyScore = -5;
+            } else {
+                enemyScore = -State.SCORE_FOR_DEATH;
+            }
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        }  else {// check other els
             enemyScore = -EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, enemy.head.pos, ELEMENT.NONE);
         }
@@ -749,7 +791,7 @@ class State {
             score += this.evaluatePlayer(newState);
         }
         if (!enemy.isDead) {
-            score -= this.evaluateEnemy(enemy, newState);
+            score += this.evaluateEnemy(enemy, newState);
         }
 
         return {
@@ -900,9 +942,9 @@ class State {
                     }
                 } else {
                     if (snake.head.type === ELEMENT.HEAD_FLY) {
-                        snake.flyCount = 2;
+                        snake.flyCount = 3;
                     } else if (snake.head.type === ELEMENT.HEAD_EVIL) {
-                        snake.furyCount = 2;
+                        snake.furyCount = 3;
                     }
                 }
                 if (prevState.player) {

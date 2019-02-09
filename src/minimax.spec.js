@@ -24,10 +24,49 @@ describe("MiniMax", () => {
             var state = State.getState(board);
             var newState = state.step(COMMANDS.RIGHT, COMMANDS.RIGHT, 0);
             // debugger;
-            var res = AlphaBetaMulti(6, newState.state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+            var res = AlphaBetaMulti(5, newState.state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
 
             expect(res[0]).toEqual(COMMANDS.UP);
         });
+
+        it('self cut', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼                           ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼   ©                       ☼" +
+            "☼☼                           ☼" +
+            "☼☼     ☼☼☼☼☼                 ☼" +
+            "☼☼     ☼○                    ☼" +
+            "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+            "☼☼     ☼   ○  ● ○ ☼   ☼      ☼" +
+            "☼☼     ☼☼☼☼#   ● ○☼☼☼☼#      ☼" +
+            "☼☼                ☼          ☼" +
+            "☼☼                ☼  ○       ☼" +
+            "☼☼    ●                      ☼" +
+            "☼#        ○           ○      ☼" +
+            "☼☼                           ☼" +
+            "☼☼ ×───┐  ☼☼☼                ☼" +
+            "☼☼     │ ☼  ☼                ☼" +
+            "☼☼     │☼☼☼☼# ○   ☼☼ ○ ☼#    ☼" +
+            "☼☼     │☼   ☼     ☼ ☼ ☼ ☼    ☼" +
+            "☼#     │☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼     └┐         ☼○    ☼    ☼" +
+            "☼☼     ●│         ☼     ☼    ☼" +
+            "☼☼      ˅     ©    ●         ☼" +
+            "☼☼   ╓  ®                    ☼" +
+            "☼☼▲╔╗║         ●     ○       ☼" +
+            "☼#╚╝║║   ●                   ☼" +
+            "☼☼  ║║              ○      ○ ☼" +
+            "☼☼  ╚╝                      ○☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+            var state = State.getState(board);
+            var res = AlphaBetaMulti(4, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+
+            expect(res[0]).toEqual(COMMANDS.UP);
+
+        })
 
         it("case2", () => {
             const board =
@@ -86,7 +125,6 @@ describe("MiniMax", () => {
             expect(move[0]).not.toEqual(COMMANDS.LEFT);
         });
 
-
         it("should keep away form evil enemy", () => {
             const board =
                 '☼☼☼☼☼☼☼☼☼☼' +
@@ -104,7 +142,7 @@ describe("MiniMax", () => {
             var state = State.getState(board);
             state.enemies[0].furyCount = 5;
             ///debugger;
-            const move = AlphaBetaMulti(1, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+            const move = AlphaBetaMulti(4, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
             expect(move[0]).toEqual(COMMANDS.UP);
 
         });

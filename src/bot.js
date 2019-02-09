@@ -80,6 +80,8 @@ function getNextSnakeMoveInner(board, logger, logState) {
 
 
     logger(`turn: ${turnsCount} x:${currentState.player.head.pos[0]} y: ${currentState.player.head.pos[1]} evil: ${currentState.player.furyCount} fly: ${currentState.player.flyCount}`);
+
+
     var selfSize = currentState.player.elements.length;
     var maxEnemiesSize = 0;
     currentState.enemies.forEach(en => {
@@ -88,7 +90,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         }
     });
 
-    logger(`Size: ${selfSize}`);
+    logger(`Size: ${selfSize} - ${maxEnemiesSize}`);
 
 
     var mode = 'normal';
@@ -118,7 +120,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             }
         })
         // debugger;
-        var res = AlphaBetaMulti(5, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0);
+        var res = AlphaBetaMulti(6, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0);
         logger(`Enemy size: ${currentState.enemies[enIdx].elements.length}`);
         logger(`Attack score: ${res[1]} - ${res[0]}`);
         if (res[0] !== 'NO') {
@@ -180,7 +182,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             } else if (x.element === ELEMENT.FURY_PILL) {
                 foodDir[x.command] += 6 / (x.distance * x.distance);
             } else if (isEnemyHead(x.element)) {
-                foodDir[x.command] += 2 + (currentState.player.elements.length - maxEnemiesSize ) / (x.distance * x.distance);
+                foodDir[x.command] += (currentState.player.elements.length - maxEnemiesSize ) / (x.distance * x.distance);
             }
         });
         logger(JSON.stringify(foodDir));
