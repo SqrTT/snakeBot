@@ -642,15 +642,18 @@ class State {
             playerScore = EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else if (elAtPos === ELEMENT.STONE) {
-            if (this.player.elements.length >= 5) {
+            if (newState.player.elements.length >= 5) {
                 //reduce length
-                this.player.elements.shift();
-                this.player.elements.shift();
-                this.player.elements.shift();
+                newState.player.elements.shift();
+                newState.player.elements.shift();
+                newState.player.elements.shift();
                 playerScore = 5;
             } else {
                 playerScore = -State.SCORE_FOR_DEATH;
             }
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        } else if (elAtPos === ELEMENT.APPLE) {
+            newState.player.elements.unshift(this.player.elements[0]);// restore old tail
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else {// check other els
             playerScore = EVALUATION_MAP[mode][elAtPos];
@@ -663,7 +666,7 @@ class State {
      * @param {Snake} enemy
      * @param {State} newState
      */
-    evaluateEnemy(enemy, newState) {
+    evaluateEnemy(enemy, newState, idx) {
         var mode = 'NORMAL';
         var enemyScore = Infinity;
         if (enemy.furyCount > 0) {
@@ -696,6 +699,9 @@ class State {
             } else {
                 enemyScore = -State.SCORE_FOR_DEATH;
             }
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        } else if (elAtPos === ELEMENT.APPLE) {
+            newState.enemies[idx].elements.unshift(this.enemies[idx].elements[0]);// restore old tail
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         }  else {// check other els
             enemyScore = -EVALUATION_MAP[mode][elAtPos];
@@ -791,7 +797,7 @@ class State {
             score += this.evaluatePlayer(newState);
         }
         if (!enemy.isDead) {
-            score += this.evaluateEnemy(enemy, newState);
+            score += this.evaluateEnemy(enemy, newState, enemyID);
         }
 
         return {

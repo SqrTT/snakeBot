@@ -120,7 +120,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             }
         })
         // debugger;
-        var res = AlphaBetaMulti(6, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0);
+        var res = AlphaBetaMulti(5, currentState, enIdx, ['NO', -Infinity], ['NO', Infinity], 0);
         logger(`Enemy size: ${currentState.enemies[enIdx].elements.length}`);
         logger(`Attack score: ${res[1]} - ${res[0]}`);
         if (res[0] !== 'NO') {
@@ -168,10 +168,10 @@ function getNextSnakeMoveInner(board, logger, logState) {
     } else {
         logger('find goods');
         var foodDir = {
-            [COMMANDS.LEFT]: 0,
-            [COMMANDS.RIGHT]: 0,
-            [COMMANDS.DOWN]: 0,
-            [COMMANDS.UP]: 0
+            [COMMANDS.LEFT]: -100,
+            [COMMANDS.RIGHT]: -100,
+            [COMMANDS.DOWN]: -100,
+            [COMMANDS.UP]: -100
         }
 
         directions.forEach(x => {
@@ -188,7 +188,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger(JSON.stringify(foodDir));
 
         var nextCommand = 'NONE';
-        var nextWeight = 0;
+        var nextWeight = -100;
 
         currentState.player.nextSteps.forEach(cmnd => {
             if (nextWeight < foodDir[cmnd]) {
@@ -196,7 +196,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
                 nextCommand = cmnd;
             }
         })
-        if (nextWeight === 0) {
+        if (nextWeight === -100) {
             logger('no goods, avoid walls');
             nextCommand = currentState.player.nextSteps[0] || COMMANDS.RIGHT;
 

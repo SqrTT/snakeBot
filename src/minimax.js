@@ -41,9 +41,6 @@ function AlphaBetaMulti(depth, state, enemyIdx, alpha, beta, score) {
                     beta,
                     (emulationStep.score * depth * depth) + score
                 );
-                // if (next[SCORE] > betterScore[SCORE]) {
-                //     betterScore = [playerSteps[playerStepsIdx], next[SCORE]];
-                // }
 
                 enemyBetter = [enemySteps[enemyStepsIdx], next[SCORE] + enemyBetter[SCORE]];
 
