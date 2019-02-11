@@ -21,6 +21,8 @@
  */
 var { getNextSnakeMove } = require('./bot');
 var { getBoardAsString } = require('./utils');
+var { COMMANDS } = require('./constants');
+
 var score;
 var roundTotal = 0;
 var ticks111 = 0;
@@ -36,6 +38,31 @@ socket.addEventListener('open', function (event) {
 
 socket.addEventListener('close', function (event) {
     console.log('Closed');
+});
+
+var currentCommand = undefined;
+document.addEventListener('keydown', (e) => {
+    switch (e.keyCode) {
+        case 37:
+            currentCommand = COMMANDS.LEFT;
+            e.preventDefault();
+            break;
+        case 38:
+            currentCommand = COMMANDS.UP;
+            e.preventDefault();
+            break;
+        case 39:
+            currentCommand = COMMANDS.RIGHT;
+            e.preventDefault();
+            break;
+        case 40:
+            currentCommand = COMMANDS.DOWN;
+            e.preventDefault();
+            break;
+    }
+});
+document.addEventListener('keyup', (e) => {
+    currentCommand = undefined;
 });
 
 var forceGC = function () { }
@@ -69,10 +96,16 @@ function processBoard(board) {
     function logger(message) {
         programLogs += message + "\n"
     }
-    var answer = getNextSnakeMove(board, logger, (sessid, newLogState) => {
-        currentLogState = newLogState;
-        currentSessID = sessid;
-    });
+    var answer = '';
+    if (currentCommand) {
+        answer = currentCommand;
+    } else {
+        answer = getNextSnakeMove(board, logger, (sessid, newLogState) => {
+            currentLogState = newLogState;
+            currentSessID = sessid;
+        });
+    }
+
     var boardString = getBoardAsString(board);
 
     var logMessage = '';
