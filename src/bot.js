@@ -141,7 +141,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('extra short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= maxEnemiesSize + 3 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
+    } else if (selfSize >= maxEnemiesSize + 8 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
         logger('short self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -149,7 +149,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('short fury: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 20))) {
+    } else if ((el = directions.find(x => x.element === ELEMENT.GOLD && x.distance < 9))) {
         logger('short gold: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -157,7 +157,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= maxEnemiesSize + 3 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
+    } else if (selfSize >= maxEnemiesSize + 8 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
         logger('self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -168,27 +168,27 @@ function getNextSnakeMoveInner(board, logger, logState) {
     } else {
         logger('find goods');
         var foodDir = {
-            [COMMANDS.LEFT]: -100,
-            [COMMANDS.RIGHT]: -100,
-            [COMMANDS.DOWN]: -100,
-            [COMMANDS.UP]: -100
+            [COMMANDS.LEFT]: 0,
+            [COMMANDS.RIGHT]: 0,
+            [COMMANDS.DOWN]: 0,
+            [COMMANDS.UP]: 0
         }
 
         directions.forEach(x => {
             if (x.element === ELEMENT.GOLD) {
-                foodDir[x.command] += 10 / (x.distance * x.distance);
+                foodDir[x.command] += 8 / (x.distance * x.distance);
             } else if (x.element === ELEMENT.APPLE) {
-                foodDir[x.command] += 3 / (x.distance * x.distance);
+                foodDir[x.command] += 5 / (x.distance * x.distance);
             } else if (x.element === ELEMENT.FURY_PILL) {
-                foodDir[x.command] += 6 / (x.distance * x.distance);
+                foodDir[x.command] += 7 / (x.distance * x.distance);
             } else if (isEnemyHead(x.element)) {
-                foodDir[x.command] += (currentState.player.elements.length - maxEnemiesSize ) / (x.distance * x.distance);
+                foodDir[x.command] += 2 + (currentState.player.elements.length - maxEnemiesSize ) / (x.distance * x.distance);
             }
         });
         logger(JSON.stringify(foodDir));
 
         var nextCommand = 'NONE';
-        var nextWeight = -100;
+        var nextWeight = 0;
 
         currentState.player.nextSteps.forEach(cmnd => {
             if (nextWeight < foodDir[cmnd]) {
@@ -196,7 +196,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
                 nextCommand = cmnd;
             }
         })
-        if (nextWeight === -100) {
+        if (nextWeight === 0) {
             logger('no goods, avoid walls');
             nextCommand = currentState.player.nextSteps[0] || COMMANDS.RIGHT;
 

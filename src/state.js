@@ -658,7 +658,7 @@ class State {
                 newState.player.elements.shift();
                 newState.player.elements.shift();
                 newState.player.elements.shift();
-                playerScore = 5;
+                playerScore = -10;
             } else {
                 playerScore = -State.SCORE_FOR_DEATH;
             }
@@ -667,7 +667,10 @@ class State {
             newState.player.elements.unshift(this.player.elements[0]);// restore old tail
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
             playerScore = 100;
-        } else {// check other els
+        } else if (elAtPos === ELEMENT.GOLD) {
+            playerScore = 150;
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        }else {// check other els
             playerScore = EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         }
@@ -711,6 +714,9 @@ class State {
             } else {
                 enemyScore = -State.SCORE_FOR_DEATH;
             }
+            newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
+        } else if (elAtPos === ELEMENT.GOLD) {
+            enemyScore = -150;
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else if (elAtPos === ELEMENT.APPLE) {
             newState.enemies[idx].elements.unshift(this.enemies[idx].elements[0]);// restore old tail

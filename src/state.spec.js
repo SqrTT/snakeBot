@@ -99,7 +99,7 @@ describe("State", () => {
             expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH);
         });
 
-        it('count on growinf tail', () => {
+        it('count on growing tail', () => {
             const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
             "☼☼         ○                 ☼" +
             "☼#         ˄                 ☼" +
@@ -137,6 +137,44 @@ describe("State", () => {
             var nextState = state.step(COMMANDS.RIGHT, COMMANDS.UP, 0);
             expect(nextState.state.enemies[0].elements.length).toEqual(5);
 
+        })
+
+        it('skips gold if danger', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼                           ☼" +
+                "☼#                           ☼" +
+                "☼☼       ●                   ☼" +
+                "☼☼ $                         ☼" +
+                "☼☼           ●    ○  ○       ☼" +
+                "☼☼     ☼☼☼☼☼                 ☼" +
+                "☼☼     ☼                     ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+                "☼☼     ☼          ☼   ☼  ●   ☼" +
+                "☼☼     ☼☼☼☼#     ○☼☼☼☼#      ☼" +
+                "☼☼          $     ☼○         ☼" +
+                "☼☼                ☼    ○    $☼" +
+                "☼☼    ●                      ☼" +
+                "☼#            æ       ○      ☼" +
+                "☼☼            │              ☼" +
+                "☼☼    ○   ☼☼☼ │○             ☼" +
+                "☼☼       ☼  ☼ │              ☼" +
+                "☼☼      ☼☼☼☼#╓│   ☼☼   ☼#    ☼" +
+                "☼☼      ☼   ☼║│ ● ☼ ☼ ☼ ☼ ○  ☼" +
+                "☼#    ○ ☼   ☼║│   ☼  ☼© ☼    ☼" +
+                "☼☼           ║│○  ☼     ☼    ☼" +
+                "☼☼     ●     ║│   ☼     ☼    ☼" +
+                "☼☼ ○©        ║˅      ●○    ○ ☼" +
+                "☼☼           ▼®     ○        ☼" +
+                "☼☼             ●$    ○   ○   ☼" +
+                "☼#   ○                       ☼" +
+                "☼☼               ○          ○☼" +
+                "☼☼                           ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+                var state = State.getState(board);
+
+                var nextState = state.step(COMMANDS.RIGHT, COMMANDS.DOWN, 0);;
+                expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH);
         })
 
         it("should prevent step on enemy", () => {

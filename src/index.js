@@ -23,7 +23,7 @@ var { getNextSnakeMove } = require('./bot');
 var { getBoardAsString } = require('./utils');
 var score;
 var roundTotal = 0;
-var ticks = 0;
+var ticks111 = 0;
 
 var URL = process.env.GAME_URL || '';
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");
@@ -47,7 +47,7 @@ if (typeof gc === 'function') {
 }
 socket.addEventListener('message', function (event) {
     var pattern = new RegExp(/^board=(.*)$/);
-    ticks++;
+    ticks111++;
     var message = event.data;
     var parameters = message.match(pattern);
     var board = parameters[1];
@@ -89,11 +89,11 @@ function processBoard(board) {
         }
         if (board.indexOf('&') > -1) {
             roundTotal = 0;
-            ticks = 0;
+            ticks111 = 0;
         }
         var textarea = document.getElementById("score");
         if (textarea) {
-            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal / ticks).toFixed(2)}) ${score.info} \n`;
+            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal / ticks111).toFixed(2)}) ${score.info} \n`;
         }
     }
 
