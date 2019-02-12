@@ -337,6 +337,43 @@ describe("MiniMax", () => {
                 const move = AlphaBetaMulti(3, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
                 expect(move[0]).not.toEqual(COMMANDS.UP);
         })
+        it('dont eat apply if danger', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼       ○                   ☼" +
+            "☼#                           ☼" +
+            "☼☼       ●    ○○             ☼" +
+            "☼☼                        ●○ ☼" +
+            "☼☼           ●            ○  ☼" +
+            "☼☼    ○☼☼☼☼☼             ○   ☼" +
+            "☼☼     ☼       ●             ☼" +
+            "☼#○○○○ ☼☼☼        ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼  ●   ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼   ○        ○   ☼          ☼" +
+            "☼☼              ○ ☼         ●☼" +
+            "☼☼    ●  ○                   ☼" +
+            "☼#            ®              ☼" +
+            "☼☼    ▲○  ○                  ☼" +
+            "☼☼    ║˄  ☼☼☼                ☼" +
+            "☼☼   ╔╝│ ☼  ☼                ☼" +
+            "☼☼○  ║ │☼☼☼☼#     ☼☼   ☼#    ☼" +
+            "☼☼   ╙ │☼   ☼   ● ☼ ☼ ☼ ☼    ☼" +
+            "☼#     │☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼     └┐┌┐       ☼     ☼    ☼" +
+            "☼☼     ●└┘│       ☼     ☼    ☼" +
+            "☼☼        │     ●            ☼" +
+            "☼☼        │           ○      ☼" +
+            "☼☼        └┐                 ☼" +
+            "☼#         │                 ☼" +
+            "☼☼         │             $   ☼" +
+            "☼☼         ¤                 ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+            var state = State.getState(board);
+
+            const move = AlphaBetaMulti(5, state, 0, ['NO', -Infinity], ['NO', Infinity], 0);
+            expect(move[0]).not.toEqual(COMMANDS.RIGHT);
+        })
 
     });
 });

@@ -12,8 +12,8 @@ client.on('connectFailed', function (error) {
 });
 
 
-var forceGC = function () {}
-if (typeof gc ==='function') {
+var forceGC = function () { }
+if (typeof gc === 'function') {
     forceGC = gc;
     console.log('Clean gc usage');
 } else {
@@ -82,9 +82,15 @@ client.on('connect', function (connection) {
 
 });
 
-var URL = 'https://snakebattle.tk/codenjoy-contest/board/player/tolikNode@ssss.ss?code=2351022371376477086';
+var URL = 'https://game1.epam-bot-challenge.com.ua/codenjoy-contest/board/player/tolik@sqrtt.pro?code=1950246074193093654';
 //var URL = 'https://game3.epam-bot-challenge.com.ua/codenjoy-contest/board/player/tolik@sqrtt.pro?code=1950246074193093654';
+process.argv.forEach(function (val, index, array) {
+    if (val.includes("URL=")) {
+        URL = val.split('URL=')[1];
+    }
+});
 
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");
+console.log(url);
 
 client.connect(url);

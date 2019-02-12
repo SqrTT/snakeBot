@@ -238,7 +238,7 @@ describe("State", () => {
             var state = State.getState(board);
             var res = state.step(COMMANDS.RIGHT, COMMANDS.DOWN, 0);
 
-            expect(res.score).toEqual(State.SCORE_FOR_DEATH);
+            expect(res.score).toEqual(State.SCORE_FOR_DEATH * 2);
         });
 
         it("should find head correctly", () => {
@@ -335,6 +335,43 @@ describe("State", () => {
             var harv = State.harvestingMove(10, state, 0);
             expect(harv[0]).toEqual(COMMANDS.DOWN);
         });
+        it('calc correct', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼       ○                   ☼" +
+            "☼#                           ☼" +
+            "☼☼       ●    ○○             ☼" +
+            "☼☼                        ●○ ☼" +
+            "☼☼           ●            ○  ☼" +
+            "☼☼    ○☼☼☼☼☼             ○   ☼" +
+            "☼☼     ☼       ●             ☼" +
+            "☼#○○○○ ☼☼☼        ☼☼☼☼#      ☼" +
+            "☼☼     ☼          ☼   ☼  ●   ☼" +
+            "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+            "☼☼   ○        ○   ☼          ☼" +
+            "☼☼              ○ ☼         ●☼" +
+            "☼☼    ●  ○                   ☼" +
+            "☼#            ®              ☼" +
+            "☼☼    ╔►  ○                  ☼" +
+            "☼☼    ║˄  ☼☼☼                ☼" +
+            "☼☼   ╔╝│ ☼  ☼                ☼" +
+            "☼☼○  ║ │☼☼☼☼#     ☼☼   ☼#    ☼" +
+            "☼☼   ╙ │☼   ☼   ● ☼ ☼ ☼ ☼    ☼" +
+            "☼#     │☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼     └┐┌┐       ☼     ☼    ☼" +
+            "☼☼     ●└┘│       ☼     ☼    ☼" +
+            "☼☼        │     ●            ☼" +
+            "☼☼        │           ○      ☼" +
+            "☼☼        └┐                 ☼" +
+            "☼#         │                 ☼" +
+            "☼☼         ¤             $   ☼" +
+            "☼☼                           ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+            var state = State.getState(board);
+
+
+            var resPlay = state.step(COMMANDS.UP, COMMANDS.UP, 0);
+            expect(resPlay.score).toEqual(-State.SCORE_FOR_DEATH);
+        })
 
 
     });

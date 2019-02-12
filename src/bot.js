@@ -54,7 +54,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             nextPos = sum(DIRECTIONS_MAP[el.command], currentState.player.head.getPos())
         }
         var logObject = {
-            pathMatrix: pathMatrix,
+            pathMatrix: pathMatrix || [[]],
             tickNumber: turnsCount,
             board: board,
             snakeIsDead: false,
