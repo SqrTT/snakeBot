@@ -615,6 +615,7 @@ class State {
 
             for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
                 var emulState = new State();
+                emulState.enemies = newState.enemies;
                 emulState.boardMatrix = newState.boardMatrix;
                 emulState.player = newState.player.move(playerSteps[playerStepsIdx], emulState.boardMatrix);
                 var currScore = emulState.evaluatePlayer(emulState, null);
