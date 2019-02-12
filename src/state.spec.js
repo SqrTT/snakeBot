@@ -322,6 +322,19 @@ describe("State", () => {
 
 
         });
+        it("should harvest  apples DOWN", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼ ╘► ☼' +
+                '☼  ○ ☼' +
+                '☼    ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+
+            var state = State.getState(board);
+            var harv = State.harvestingMove(10, state, 0);
+            expect(harv[0]).toEqual(COMMANDS.DOWN);
+        });
 
 
     });

@@ -82,7 +82,7 @@ client.on('connect', function (connection) {
 
 });
 
-var URL = 'https://game1.epam-bot-challenge.com.ua/codenjoy-contest/board/player/tolik@sqrtt.pro?code=1950246074193093654';
+var URL = 'https://snakebattle.tk/codenjoy-contest/board/player/tolikNode@ssss.ss?code=2351022371376477086';
 //var URL = 'https://game3.epam-bot-challenge.com.ua/codenjoy-contest/board/player/tolik@sqrtt.pro?code=1950246074193093654';
 
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");

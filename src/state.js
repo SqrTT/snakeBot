@@ -3,164 +3,7 @@ var { getBoardAsArray, findElementPos, sum, isEnemy, findElementsPos, getDirecti
 
 const X = 0,
     Y = 1;
-
-
-var ENEMY_EVALUATION_MAP = {
-    NORMAL: {
-
-        [ELEMENT.NONE]: 0,
-        [ELEMENT.WALL]: -50,
-        [ELEMENT.START_FLOOR]: -50,
-        [ELEMENT.OTHER]: -50,
-
-        [ELEMENT.APPLE]: 1,
-        [ELEMENT.STONE]: 50,
-        [ELEMENT.FLYING_PILL]: 0,
-        [ELEMENT.FURY_PILL]: 0,
-        [ELEMENT.GOLD]: 5,
-        [ELEMENT.TAIL_END_DOWN]: 10,
-        [ELEMENT.TAIL_END_LEFT]: 10,
-        [ELEMENT.TAIL_END_UP]: 10,
-        [ELEMENT.TAIL_END_RIGHT]: 10,
-        [ELEMENT.TAIL_INACTIVE]: 50,
-        [ELEMENT.BODY_HORIZONTAL]: 50,
-        [ELEMENT.BODY_VERTICAL]: 50,
-        [ELEMENT.BODY_LEFT_DOWN]: 50,
-        [ELEMENT.BODY_LEFT_UP]: 50,
-        [ELEMENT.BODY_RIGHT_DOWN]: 50,
-        [ELEMENT.BODY_RIGHT_UP]: 50,
-        // игрок
-        [ELEMENT.HEAD_DOWN]: 50,
-        [ELEMENT.HEAD_LEFT]: 50,
-        [ELEMENT.HEAD_RIGHT]: 50,
-        [ELEMENT.HEAD_UP]: 50,
-        [ELEMENT.HEAD_DEAD]: 50,
-        [ELEMENT.HEAD_EVIL]: 50,
-        [ELEMENT.HEAD_FLY]: 0,
-        [ELEMENT.HEAD_SLEEP]: 50,
-        [ELEMENT.ENEMY_HEAD_DOWN]: 50,
-        [ELEMENT.ENEMY_HEAD_LEFT]: 50,
-        [ELEMENT.ENEMY_HEAD_RIGHT]: 50,
-        [ELEMENT.ENEMY_HEAD_UP]: 50,
-        [ELEMENT.ENEMY_HEAD_DEAD]: 50,
-        [ELEMENT.ENEMY_HEAD_EVIL]: 50,
-        [ELEMENT.ENEMY_HEAD_FLY]: 0,
-        [ELEMENT.ENEMY_HEAD_SLEEP]: 50,
-        [ELEMENT.ENEMY_TAIL_END_DOWN]: 50,
-        [ELEMENT.ENEMY_TAIL_END_LEFT]: 50,
-        [ELEMENT.ENEMY_TAIL_END_UP]: 50,
-        [ELEMENT.ENEMY_TAIL_END_RIGHT]: 50,
-        [ELEMENT.ENEMY_TAIL_INACTIVE]: 50,
-        [ELEMENT.ENEMY_BODY_HORIZONTAL]: 50,
-        [ELEMENT.ENEMY_BODY_VERTICAL]: 50,
-        [ELEMENT.ENEMY_BODY_LEFT_DOWN]: 50,
-        [ELEMENT.ENEMY_BODY_LEFT_UP]: 50,
-        [ELEMENT.ENEMY_BODY_RIGHT_DOWN]: 50,
-        [ELEMENT.ENEMY_BODY_RIGHT_UP]: 50
-    },
-    EVIL: {
-        [ELEMENT.NONE]: 0,
-        [ELEMENT.WALL]: -50,
-        [ELEMENT.START_FLOOR]: -50,
-        [ELEMENT.OTHER]: -50,
-
-        [ELEMENT.APPLE]: 1,
-        [ELEMENT.STONE]: 10,
-        [ELEMENT.FLYING_PILL]: 1,
-        [ELEMENT.FURY_PILL]: 1,
-        [ELEMENT.GOLD]: 5,
-        [ELEMENT.TAIL_END_DOWN]: -10,
-        [ELEMENT.TAIL_END_LEFT]: -10,
-        [ELEMENT.TAIL_END_UP]: -10,
-        [ELEMENT.TAIL_END_RIGHT]: -10,
-        [ELEMENT.TAIL_INACTIVE]: -50,
-        [ELEMENT.BODY_HORIZONTAL]: -50,
-        [ELEMENT.BODY_VERTICAL]: -50,
-        [ELEMENT.BODY_LEFT_DOWN]: -50,
-        [ELEMENT.BODY_LEFT_UP]: -50,
-        [ELEMENT.BODY_RIGHT_DOWN]: -50,
-        [ELEMENT.BODY_RIGHT_UP]: -50,
-        // игрок
-        [ELEMENT.HEAD_DOWN]: -50,
-        [ELEMENT.HEAD_LEFT]: -50,
-        [ELEMENT.HEAD_RIGHT]: -50,
-        [ELEMENT.HEAD_UP]: -50,
-        [ELEMENT.HEAD_DEAD]: -50,
-        [ELEMENT.HEAD_EVIL]: -50,
-        [ELEMENT.HEAD_FLY]: -50,
-        [ELEMENT.HEAD_SLEEP]: -50,
-        [ELEMENT.ENEMY_HEAD_DOWN]: 51,
-        [ELEMENT.ENEMY_HEAD_LEFT]: 51,
-        [ELEMENT.ENEMY_HEAD_RIGHT]: 51,
-        [ELEMENT.ENEMY_HEAD_UP]: 51,
-        [ELEMENT.ENEMY_HEAD_DEAD]: 51,
-        [ELEMENT.ENEMY_HEAD_EVIL]: 51,
-        [ELEMENT.ENEMY_HEAD_FLY]: 0,
-        [ELEMENT.ENEMY_HEAD_SLEEP]: -50,
-        [ELEMENT.ENEMY_TAIL_END_DOWN]: 10,
-        [ELEMENT.ENEMY_TAIL_END_LEFT]: 10,
-        [ELEMENT.ENEMY_TAIL_END_UP]: 10,
-        [ELEMENT.ENEMY_TAIL_END_RIGHT]: 10,
-        [ELEMENT.ENEMY_TAIL_INACTIVE]: 10,
-        [ELEMENT.ENEMY_BODY_HORIZONTAL]: 30,
-        [ELEMENT.ENEMY_BODY_VERTICAL]: 30,
-        [ELEMENT.ENEMY_BODY_LEFT_DOWN]: 30,
-        [ELEMENT.ENEMY_BODY_LEFT_UP]: 30,
-        [ELEMENT.ENEMY_BODY_RIGHT_DOWN]: 30,
-        [ELEMENT.ENEMY_BODY_RIGHT_UP]: 30
-    },
-    FLY: {
-        [ELEMENT.NONE]: 0,
-        [ELEMENT.WALL]: -50,
-        [ELEMENT.START_FLOOR]: -50,
-        [ELEMENT.OTHER]: -50,
-
-        [ELEMENT.APPLE]: 1,
-        [ELEMENT.STONE]: 0,
-        [ELEMENT.FLYING_PILL]: 1,
-        [ELEMENT.FURY_PILL]: 10,
-        [ELEMENT.GOLD]: 5,
-        [ELEMENT.TAIL_END_DOWN]: 0,
-        [ELEMENT.TAIL_END_LEFT]: 0,
-        [ELEMENT.TAIL_END_UP]: 0,
-        [ELEMENT.TAIL_END_RIGHT]: 0,
-        [ELEMENT.TAIL_INACTIVE]: 0,
-        [ELEMENT.BODY_HORIZONTAL]: 0,
-        [ELEMENT.BODY_VERTICAL]: 0,
-        [ELEMENT.BODY_LEFT_DOWN]: 0,
-        [ELEMENT.BODY_LEFT_UP]: 0,
-        [ELEMENT.BODY_RIGHT_DOWN]: 0,
-        [ELEMENT.BODY_RIGHT_UP]: 0,
-        // игрок
-        [ELEMENT.HEAD_DOWN]: 0,
-        [ELEMENT.HEAD_LEFT]: 0,
-        [ELEMENT.HEAD_RIGHT]: 0,
-        [ELEMENT.HEAD_UP]: 0,
-        [ELEMENT.HEAD_DEAD]: 0,
-        [ELEMENT.HEAD_EVIL]: 0,
-        [ELEMENT.HEAD_FLY]: 0,
-        [ELEMENT.HEAD_SLEEP]: 0,
-        [ELEMENT.ENEMY_HEAD_DOWN]: 0,
-        [ELEMENT.ENEMY_HEAD_LEFT]: 0,
-        [ELEMENT.ENEMY_HEAD_RIGHT]: 0,
-        [ELEMENT.ENEMY_HEAD_UP]: 0,
-        [ELEMENT.ENEMY_HEAD_DEAD]: -50,
-        [ELEMENT.ENEMY_HEAD_EVIL]: 0,
-        [ELEMENT.ENEMY_HEAD_FLY]: 0,
-        [ELEMENT.ENEMY_HEAD_SLEEP]: -50,
-        [ELEMENT.ENEMY_TAIL_END_DOWN]: 0,
-        [ELEMENT.ENEMY_TAIL_END_LEFT]: 0,
-        [ELEMENT.ENEMY_TAIL_END_UP]: 0,
-        [ELEMENT.ENEMY_TAIL_END_RIGHT]: 0,
-        [ELEMENT.ENEMY_TAIL_INACTIVE]: 0,
-        [ELEMENT.ENEMY_BODY_HORIZONTAL]: 0,
-        [ELEMENT.ENEMY_BODY_VERTICAL]: 0,
-        [ELEMENT.ENEMY_BODY_LEFT_DOWN]: 0,
-        [ELEMENT.ENEMY_BODY_LEFT_UP]: 0,
-        [ELEMENT.ENEMY_BODY_RIGHT_DOWN]: 0,
-        [ELEMENT.ENEMY_BODY_RIGHT_UP]: 0
-    }
-}
+const SCORE = 1;
 
 var EVALUATION_MAP = {
     NORMAL: {
@@ -628,8 +471,9 @@ class State {
     /**
      *
      * @param {State} newState
+     * @param {Snake?} enemy
      */
-    evaluatePlayer(newState) {
+    evaluatePlayer(newState, enemy) {
         var playerScore = -Infinity;
         var mode = 'NORMAL';
         if (this.player.furyCount > 0) {
@@ -638,19 +482,33 @@ class State {
             mode = 'FLY';
         }
         var elAtPos = getValAt(newState.boardMatrix, newState.player.head.pos);
-        if (elAtPos === ELEMENT.NONE) {
+        if (newState.player.isDead) {
+            playerScore = 0;
+        } else if (elAtPos === ELEMENT.NONE) {
             if (newState.player.bodyContains(newState.player.head.pos)) {
                 playerScore = -State.SCORE_FOR_DEATH / 2;
+            } else if (enemy) {
+                var otherEnemy = newState.getEnemyAtPos(newState.player.head.pos, enemy);
+
+                if (otherEnemy) {
+                    playerScore = newState.snakesFight(newState, otherEnemy, 0);
+                    // if (playerScore === 0) {
+
+                    // }
+                    //playerScore = 0;
+                } else {
+                    playerScore = 0;
+                }
             } else {
                 playerScore = 0;
             }
         } else if (elAtPos === ELEMENT.FLYING_PILL) {
             newState.player.flyCount += 10;
-            playerScore = EVALUATION_MAP[mode][elAtPos];
+            playerScore = 50;
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else if (elAtPos === ELEMENT.FURY_PILL) {
             newState.player.furyCount += 10;
-            playerScore = EVALUATION_MAP[mode][elAtPos];
+            playerScore = 100;
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         } else if (elAtPos === ELEMENT.STONE) {
             if (newState.player.elements.length >= 5) {
@@ -658,7 +516,7 @@ class State {
                 newState.player.elements.shift();
                 newState.player.elements.shift();
                 newState.player.elements.shift();
-                playerScore = -10;
+                playerScore = -100;
             } else {
                 playerScore = -State.SCORE_FOR_DEATH;
             }
@@ -670,7 +528,7 @@ class State {
         } else if (elAtPos === ELEMENT.GOLD) {
             playerScore = 150;
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
-        }else {// check other els
+        } else {// check other els
             playerScore = EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, newState.player.head.pos, ELEMENT.NONE);
         }
@@ -690,7 +548,9 @@ class State {
             mode = 'FLY';
         }
         var elAtPos = getValAt(this.boardMatrix, enemy.head.pos);
-        if (elAtPos === ELEMENT.NONE) {
+        if (enemy.isDead) {
+            enemyScore = 0;
+        } else if (elAtPos === ELEMENT.NONE) {
             if (enemy.bodyContains(enemy.head.pos)) {
                 enemyScore = State.SCORE_FOR_DEATH / 2;
             } else {
@@ -710,7 +570,7 @@ class State {
                 enemy.elements.shift();
                 enemy.elements.shift();
                 enemy.elements.shift();
-                enemyScore = -5;
+                enemyScore = 0;
             } else {
                 enemyScore = -State.SCORE_FOR_DEATH;
             }
@@ -726,7 +586,46 @@ class State {
             enemyScore = -EVALUATION_MAP[mode][elAtPos];
             newState.boardMatrix = setValAt(newState.boardMatrix, enemy.head.pos, ELEMENT.NONE);
         }
-        return enemyScore;
+        return enemyScore * 2;
+    }
+    /**
+     *
+     * @param {[number, number]} pos
+     * @param {Snake} enemy
+     */
+    getEnemyAtPos(pos, enemy) {
+        for (var enemyIDx = this.enemies.length - 1; enemyIDx >= 0; enemyIDx--) {
+            if (this.enemies[enemyIDx] !== enemy && this.enemies[enemyIDx].contains(pos)) {
+                return this.enemies[enemyIDx];
+            }
+        }
+    }
+    /**
+     *
+     * @param {number} depth
+     * @param {State} newState
+     * @param {number} score
+     */
+    static harvestingMove(depth, newState, score) {
+        if (depth < 1) {
+            return ['NO', score];
+        } else {
+            var playerSteps = newState.player.nextSteps;
+            var playerBetter = ['NONE', 0]
+
+            for (var playerStepsIdx = playerSteps.length - 1; playerStepsIdx >= 0; playerStepsIdx--) {
+                var emulState = new State();
+                emulState.boardMatrix = newState.boardMatrix;
+                emulState.player = newState.player.move(playerSteps[playerStepsIdx], emulState.boardMatrix);
+                var currScore = emulState.evaluatePlayer(emulState, null);
+                var scr = State.harvestingMove(depth - 1, emulState, (currScore * depth) + score)
+
+                if (scr[SCORE] > playerBetter[SCORE]) {
+                    playerBetter = [playerSteps[playerStepsIdx], scr[SCORE]];
+                }
+            }
+            return playerBetter;
+        }
     }
     /**
      *
@@ -762,10 +661,10 @@ class State {
             throw Error('Enemy not found');
         }
 
-       var firstFight = score = this.snakesFight(newState, enemy, score);
+        var firstFight = score = this.snakesFight(newState, enemy, score);
 
         if (!newState.player.isDead) {
-            score += this.evaluatePlayer(newState);
+            score += this.evaluatePlayer(newState, enemy);
         }
         if (!enemy.isDead) {
             score += this.evaluateEnemy(enemy, newState, enemyID);

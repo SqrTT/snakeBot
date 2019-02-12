@@ -100,16 +100,15 @@ function getNextSnakeMoveInner(board, logger, logState) {
     } else if (currentState.player.furyCount > 0) {
         mode = 'evil';
     }
-    var eatStones = mode === 'evil' || currentState.player.elements.length >= maxEnemiesSize + 2;
-    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, eatStones, mode);
-    logger('path count: ' + JSON.stringify(directions.length));
+    var eatStones = mode === 'evil' || currentState.player.elements.length >= maxEnemiesSize + 10;
+
 
     var el;
     var ACT = mode === 'evil' ? 'ACT,' : '';
     var closestEnemy = currentState.getClosestEnemy()
 
-    if ((closestEnemy.distance < 7) && closestEnemy.enemy) {
-        logger('> attack mode <\n ' + closestEnemy.distance);
+    if ((closestEnemy.distance < ( 7)) && closestEnemy.enemy) {
+        logger('> attack mode <\n ' + ` d: ${closestEnemy.distance.toFixed()} s: ${closestEnemy.enemy.elements.length}\n evil: ${closestEnemy.enemy.furyCount} fly: ${closestEnemy.enemy.flyCount}`);
         var enIdx = 0;
 
         currentState.enemies.some((en, idx) => {
@@ -128,7 +127,17 @@ function getNextSnakeMoveInner(board, logger, logState) {
             writeLog(closestEnemy.enemy.head, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
             return res[0];
         }
+    } else {
+        // harvest
+        var result = State.harvestingMove(12, currentState, 0);
+        if (result[0] !== 'NONE') {
+            logger(`harvest score: ${result[1]} - ${result[0]}`);
+            writeLog(currentState.player.head, sum(DIRECTIONS_MAP[result[0]], currentState.player.head.pos));
+            return result[0];
+        }
     }
+    var directions = getDirections(board, currentState.player.head.pos, selfSize, rateElement, false, eatStones, mode);
+    logger('path count: ' + JSON.stringify(directions.length));
     /// attack
     if (mode === 'evil' && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < currentState.player.furyCount))) {
         logger('fury stone (evil): ' + el.distance);

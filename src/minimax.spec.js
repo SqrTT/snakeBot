@@ -261,7 +261,7 @@ describe("MiniMax", () => {
 
         });
 
-        it('skips gold if danger', () => {
+        it('skips fury if danger', () => {
             const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
                 "☼☼                           ☼" +
                 "☼#                           ☼" +
