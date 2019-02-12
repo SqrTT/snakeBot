@@ -444,5 +444,7 @@ describe("bot", () => {
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).not.toEqual(COMMANDS.RIGHT);
         })
+
+
     });
 });

@@ -487,7 +487,7 @@ class State {
         } else if (elAtPos === ELEMENT.NONE) {
             if (!newState.player.flyCount && newState.player.bodyContains(newState.player.head.pos)) {
                 playerScore = -State.SCORE_FOR_DEATH / 2;
-            } else if (enemy) {
+            } else {
                 var otherEnemy = newState.getEnemyAtPos(newState.player.head.pos, enemy);
 
                 if (otherEnemy) {
@@ -499,8 +499,6 @@ class State {
                 } else {
                     playerScore = 0;
                 }
-            } else {
-                playerScore = 0;
             }
         } else if (elAtPos === ELEMENT.FLYING_PILL) {
             newState.player.flyCount += 10;
@@ -591,7 +589,7 @@ class State {
     /**
      *
      * @param {[number, number]} pos
-     * @param {Snake} enemy
+     * @param {Snake?} enemy
      */
     getEnemyAtPos(pos, enemy) {
         for (var enemyIDx = this.enemies.length - 1; enemyIDx >= 0; enemyIDx--) {
