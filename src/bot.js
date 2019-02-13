@@ -90,7 +90,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         }
     });
 
-    var isFullEnough = selfSize > maxEnemiesSize + 6;
+    var isFullEnough = selfSize > maxEnemiesSize + 5;
     logger(`Size: ${selfSize} - ${maxEnemiesSize} - ${isFullEnough}`);
 
 
@@ -127,7 +127,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
             writeLog(closestEnemy.enemy.head, sum(DIRECTIONS_MAP[res[0]], currentState.player.head.pos));
             return res[0];
         }
-    } else {
+    } else if (!isFullEnough) {
         // harvest
         var result = State.harvestingMove(12, currentState, 0);
         if (result[0] !== 'NONE') {
@@ -187,7 +187,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         directions.forEach(x => {
             if (x.element === ELEMENT.GOLD) {
                 foodDir[x.command] += 8 / (x.distance * x.distance);
-            } else if (x.element === ELEMENT.APPLE) {
+            } else if (!isFullEnough && x.element === ELEMENT.APPLE) {
                 foodDir[x.command] += 5 / (x.distance * x.distance);
             } else if (x.element === ELEMENT.FURY_PILL) {
                 foodDir[x.command] += 7 / (x.distance * x.distance);

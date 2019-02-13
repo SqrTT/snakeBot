@@ -174,7 +174,7 @@ describe("State", () => {
                 var state = State.getState(board);
 
                 var nextState = state.step(COMMANDS.RIGHT, COMMANDS.DOWN, 0);;
-                expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH);
+                expect(nextState.score).toEqual(-State.SCORE_FOR_DEATH * 2);
         })
 
         it("should prevent step on enemy", () => {
@@ -408,7 +408,75 @@ describe("State", () => {
             var state = State.getState(board);
             var next = State.harvestingMove(13, state, 0);
             expect(next[0]).not.toEqual(COMMANDS.DOWN);
+        })
+        it('dont atttack enemy', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼          ┌┐    ╔╗         ☼" +
+                "☼#          │└───┐▼╙         ☼" +
+                "☼☼       ● <┘    └──┐        ☼" +
+                "☼☼                  │        ☼" +
+                "☼☼           ●      │    ●   ☼" +
+                "☼☼     ☼☼☼☼☼        │        ☼" +
+                "☼☼     ☼ ○   ┌──────┘        ☼" +
+                "☼#   ○ ☼☼☼   │    ☼☼☼☼#      ☼" +
+                "☼☼     ☼     │    ☼   ☼  ●   ☼" +
+                "☼☼     ☼☼☼☼# ¤    ☼☼☼☼#      ☼" +
+                "☼☼         ●     ○☼          ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼    ●      ©               ☼" +
+                "☼#                           ☼" +
+                "☼☼   ○                       ☼" +
+                "☼☼        ☼☼☼                ☼" +
+                "☼☼       ☼  ☼                ☼" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼" +
+                "☼☼      ☼   ☼     ☼ ☼ ☼ ☼    ☼" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+                "☼☼               ●☼     ☼    ☼" +
+                "☼☼     ●          ☼     ☼    ☼" +
+                "☼☼○                          ☼" +
+                "☼☼                           ☼" +
+                "☼☼             ●             ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼                       ○   ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼"
+                var state = State.getState(board);
 
+
+                const move = State.harvestingMove(12, state, 0);
+                expect(move[0]).not.toEqual(COMMANDS.RIGHT);
+        })
+        it('another case', () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+            "☼☼      ○  ○                 ☼" +
+            "☼#                           ☼" +
+            "☼☼       ●                ×─┐☼" +
+            "☼☼                          │☼" +
+            "☼☼           ●              │☼" +
+            "☼☼     ☼☼☼☼☼    ˄           │☼" +
+            "☼☼     ☼       ┌┘           ˅☼" +
+            "☼#     ☼☼☼  ×──┘  ☼☼☼☼#      ☼" +
+            "☼☼     ☼     ╔►   ☼   ☼  ●   ☼" +
+            "☼☼     ☼☼☼☼# ║    ☼☼☼☼#      ☼" +
+            "☼☼         ╘═╝    ☼          ☼" +
+            "☼☼                ☼         $☼" +
+            "☼☼    ●                      ☼" +
+            "☼#                           ☼" +
+            "☼☼                           ☼" +
+            "☼☼        ☼☼☼                ☼" +
+            "☼☼       ☼  ☼                ☼" +
+            "☼☼ ●    ☼☼☼☼#     ☼☼   ☼#    ☼" +
+            "☼☼      ☼   ☼   ● ☼ ☼ ☼ ☼ ○  ☼" +
+            "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+            "☼☼                ☼     ☼    ☼" +
+            "☼☼     ●          ☼     ☼    ☼" +
+            "☼☼                           ☼" +
+            "☼☼                  ○        ☼" +
+            "☼☼             ×─>       ○   ☼" +
+            "☼#                           ☼" +
+            "☼☼               ○           ☼" +
+            "☼☼                           ☼" +
+            "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
         })
     });
 });
