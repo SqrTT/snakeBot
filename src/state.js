@@ -414,16 +414,13 @@ class Snake {
         }
     }
     contains(pos) {
-        if (this.isDead) {
-            return false;
-        } else {
-            for (var idx = this.elements.length - 1; idx >= 0; idx--) {
-                if (isSamePos(this.elements[idx].pos, pos)) {
-                    return true;
-                }
+
+        for (var idx = this.elements.length - 1; idx >= 0; idx--) {
+            if (isSamePos(this.elements[idx].pos, pos)) {
+                return true;
             }
-            return false;
         }
+
     }
 }
 exports.Snake = Snake;
@@ -706,6 +703,13 @@ class State {
             state: newState
         };
     }
+    replaceEnemy(enemy, newEnemy) {
+        for (var enemyIDx = this.enemies.length - 1; enemyIDx >= 0; enemyIDx--) {
+            if (this.enemies[enemyIDx] === enemy) {
+                this.enemies[enemyIDx] = newEnemy;
+            }
+        }
+    }
     /**
      *
      * @param {State} newState
@@ -724,20 +728,28 @@ class State {
                     score = State.SCORE_ELEMENT * bit.tile;
                     enemy.elements.splice(0, bit.tile);
                 } else {
+                    //var newDeadEnemy = new Snake(enemy.head);
                     enemy.isDead = true;
+                    //newState.replaceEnemy(enemy, newDeadEnemy);
                     score = State.SCORE_FOR_DEATH;
                 }
             } else {
                 if (newState.player.head.isSame(enemy.head.pos) || enemy.isNeck(newState.player.head.pos)) {
                     if (newState.player.elements.length - enemy.elements.length >= 2) {
                         score = newState.player.elements.length * State.SCORE_ELEMENT;
+                        //var newDeadEnemy = new Snake(enemy.head);
                         enemy.isDead = true;
+                        //newState.replaceEnemy(enemy, newDeadEnemy);
+
+                        //enemy = newDeadEnemy;
                     } else {
                         score = -State.SCORE_FOR_DEATH;
+                        newState.player = new Snake(newState.player.head);
                         newState.player.isDead = true;
                     }
                 } else {
                     score = -State.SCORE_FOR_DEATH;
+                    newState.player = new Snake(newState.player.head);
                     newState.player.isDead = true;
                 }
             }
@@ -751,25 +763,40 @@ class State {
                     score = -State.SCORE_ELEMENT * bit.tile;
                     newState.player.elements.splice(0, bit.tile);
                 } else {
+                    newState.player = new Snake(newState.player.head);
                     newState.player.isDead = true;
                     score = -State.SCORE_FOR_DEATH;
                 }
             } else if (!enemy.furyCount && newState.player.furyCount) {
+                //var newDeadEnemy = new Snake(enemy.head);
                 enemy.isDead = true;
+                //newState.replaceEnemy(enemy, newDeadEnemy);
+
+                //enemy = newDeadEnemy;
                 score = State.SCORE_FOR_DEATH;
             } else {
                 if (enemy.head.isSame(newState.player.head.pos) || newState.player.isNeck(enemy.head.pos)) {
                     if (enemy.elements.length - newState.player.elements.length >= 2) {
                         score = -State.SCORE_FOR_DEATH;
+                        newState.player = new Snake(newState.player.head);
                         newState.player.isDead = true;
                     } else {
                         score = -State.SCORE_FOR_DEATH;
+                        // var newDeadEnemy = new Snake(enemy.head);
                         enemy.isDead = true;
+                        //newState.replaceEnemy(enemy, newDeadEnemy);
+
+                        //enemy = newDeadEnemy;
                         ////newState.player.isDead = true;
                     }
                 } else {
                     score = State.SCORE_FOR_DEATH;
+                    //enemy.isDead = true;
+                    //var newDeadEnemy = new Snake(enemy.head);
                     enemy.isDead = true;
+                    //newState.replaceEnemy(enemy, newDeadEnemy);
+
+                    //enemy = newDeadEnemy;
                 }
             }
         }

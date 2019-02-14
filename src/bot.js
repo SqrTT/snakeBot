@@ -151,7 +151,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('extra short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= maxEnemiesSize + 10 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
+    } else if (false && selfSize >= maxEnemiesSize + 10 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 2))) {
         logger('short self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
@@ -167,7 +167,7 @@ function getNextSnakeMoveInner(board, logger, logState) {
         logger('short apple: ' + el.distance);
         writeLog(el)
         return ACT + el.command;
-    } else if (selfSize >= maxEnemiesSize + 10 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
+    } else if (false && selfSize >= maxEnemiesSize + 10 && (el = directions.find(x => x.element === ELEMENT.STONE && x.distance < 8))) {
         logger('self cut stone: ' + el.distance);
         writeLog(el)
         return ACT + el.command;

@@ -12,7 +12,7 @@
     },
     "repository": "https://github.com/codenjoyme/codenjoy/tree/snake-new-ui/CodingDojo/games/snake-battle/src/main/javascript",
     "scripts": {
-        "web": "webpack-serve  --config ./webpack.config.js",
+        "web": "webpack-serve  --config ./webpack.config.js --host 0.0.0.0",
         "start": "node --expose-gc main.js",
         "test": "jest",
         "tdd": "jest --watch",
