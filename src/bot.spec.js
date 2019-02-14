@@ -1,77 +1,378 @@
-/*-
- * #%L
- * Codenjoy - it's a dojo-like platform from developers to developers.
- * %%
- * Copyright (C) 2018 - 2019 Codenjoy
- * %%
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public
- * License along with this program.  If not, see
- * <http://www.gnu.org/licenses/gpl-3.0.html>.
- * #L%
- */
-import {
-    getNextSnakeMove,
-} from './bot';
-import {
-  COMMANDS
-} from './constants';
+
+const {
+    getNextSnakeMove, resetState
+} = require('./bot');
+const {
+    COMMANDS
+} = require('./constants');
+const mockLogger = (a) => {
+    // console.log(a);
+};
 
 describe("bot", () => {
-    describe("getNextSnakeMove", ()=> {
-        const mockLogger = (a)=> {
-            console.log(a);
-        };
-
-        it("should define method", ()=> {
-            expect(getNextSnakeMove).toBeDefined();
-        });
-        xit("should avoid horisontal wall", ()=> {
+    describe('ENEMIES', () => {
+        beforeEach(() => {
+            resetState();
+        })
+        it("should avoid enemy potential step", () => {
             const board =
-            '*****' +
-            '#   *' +
-            '*   *' +
-            '* ═►*' +
-            '*****';
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼   ╘►   ☼' +
+                '☼  ×──>  ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.RIGHT);
+        });
+        it("should attack enemy close path", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼  ╘══►  ☼' +
+                '☼×──>    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.UP);
+        });
+
+        it("should attack enemy close path #2", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼  ╘══►  ☼' +
+                '☼        ☼' +
+                '☼×──>    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.DOWN);
+        });
+
+        it("should keep away form evil enemy", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼╘══►    ☼' +
+                '☼ ×──♣   ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.UP);
         });
-        xit("should avoid wall", ()=> {
+
+        it("should not kill itself", () => {
             const board =
-            '*****' +
-            '* ═►*' +
-            '*   *' +
-            '#   *' +
-            '*****';
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼ ×──>   ☼' +
+                '☼╘══►    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should not kill itself", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼ ×──♣   ☼' +
+                '☼╘══►    ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            //debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+
+        it("should not kill itself #2", () => {
+            const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼                           ☼" +
+                "☼#             ○             ☼" +
+                "☼☼       ●                   ☼" +
+                "☼☼                           ☼" +
+                "☼☼           ●     ○         ☼" +
+                "☼☼     ☼☼☼☼☼                 ☼" +
+                "☼☼     ☼              ●      ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+                "☼☼    $☼          ☼   ☼  ●   ☼" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼   ○●                      ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼        ☼☼☼                ☼" +
+                "☼☼       ☼  ☼           ○    ☼" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#    ☼" +
+                "☼☼      ☼   ☼   ● ☼ ☼ ☼ ☼    ☼" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+                "☼☼   ●            ☼     ☼    ☼" +
+                "☼☼     ●          ☼     ☼    ☼" +
+                "☼☼                       ©   ☼" +
+                "☼☼                  ┌┐       ☼" +
+                "☼☼ ○    ○           ¤└┐      ☼" +
+                "☼#                   ●└─┐    ☼" +
+                "☼☼                      └> ▲ ☼" +
+                "☼☼                     ╘═══╝ ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼"
+            //æ──>
+            // debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.LEFT);
+        });
+
+        it("should attack enemy in fury", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '#        ☼' +
+                '☼    ╘♥  ☼' +
+                '☼  ×──>  ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.DOWN);
+        });
+    })
+
+    describe("getNextSnakeMove", () => {
+
+        it("should define method", () => {
+            expect(getNextSnakeMove).toBeDefined();
+        });
+        it("should avoid horizontal wall", () => {
+            const board =
+                '☼☼☼☼☼' +
+                '#   ☼' +
+                '☼   ☼' +
+                '☼ ╘►☼' +
+                '☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toContain(COMMANDS.UP);
+        });
+        it("should avoid wall", () => {
+            const board =
+                '☼☼☼☼☼' +
+                '☼ ╘►☼' +
+                '☼   ☼' +
+                '#   ☼' +
+                '☼☼☼☼☼';
+
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.DOWN);
         });
 
-        it("should try to catch apples", ()=> {
+        it("should try to catch apples DOWN", () => {
             const board =
-            '******' +
-            '* ═► *' +
-            '*  ○ *' +
-            '*    *' +
-            '#    *' +
-            '******';
+                '☼☼☼☼☼☼' +
+                '☼ ╘► ☼' +
+                '☼  ○ ☼' +
+                '☼    ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+
             const move = getNextSnakeMove(board, mockLogger);
             expect(move).toEqual(COMMANDS.DOWN);
         });
 
-        it("sdf", () => {
+        // it('strange head', () => {
+        //     const board = "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼                           ☼☼#                           ☼☼☼       ●                   ☼☼☼                      ○    ☼☼☼           ●           ╘══╗☼☼☼     ☼☼☼☼☼              ╔═╝☼☼☼     ☼                  ♥  ☼☼#     ☼☼☼  ○     ☼☼☼☼#      ☼☼☼     ☼    ●     ☼   ☼  ●$  ☼☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼☼☼                ☼          ☼☼☼                ☼         $☼☼☼        ●                  ☼☼#                           ☼☼☼                          ©☼☼☼        ☼☼☼                ☼☼☼       ☼○ ☼                ☼☼☼      ☼☼☼☼#     ☼☼  ©☼#    ☼☼☼      ☼   ☼  ○● ☼ ☼ ☼ ☼ ○  ☼☼#      ☼   ☼     ☼  ☼  ☼    ☼☼☼                ☼     ☼    ☼☼☼ ●              ☼    ○☼    ☼☼☼             ˄             ☼☼☼             ¤    ○        ☼☼☼                       ○   ☼☼#                           ☼☼☼               ●           ☼☼☼                           ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+        //     const move = getNextSnakeMove(board, mockLogger);
+        //     expect(move).toEqual(COMMANDS.DOWN);
+        // })
+
+
+
+        it("should try to catch apples UP", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼  ○ ☼' +
+                '☼ ╘► ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.UP);
+        });
+
+        it("should try to catch apples RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ►○ ☼' +
+                '☼ ╘  ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should see 2 step ahead  RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ► ○☼' +
+                '☼ ╘  ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+        it("should see 3 step ahead  RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼►  ○☼' +
+                '☼╘   ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should try to catch apples LEFT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ○► ☼' +
+                '☼  ╘ ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.LEFT);
+        });
+
+        it("should choose gold in favor of apple RIGHT", () => {
+            const board =
+                '☼☼☼☼☼☼' +
+                '☼    ☼' +
+                '☼ ○►$☼' +
+                '☼  ╘ ☼' +
+                '#    ☼' +
+                '☼☼☼☼☼☼';
+            // debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+
+        it("should not cross itself", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼   ╔═►  ☼' +
+                '☼   ╚═══╕☼' +
+                '#     $  ☼' +
+                '☼        ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.DOWN);
+        });
+
+        it("should not cross itself if food is away", () => {
+            const board =
+                '☼☼☼☼☼☼☼☼☼☼' +
+                '#       $☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼        ☼' +
+                '☼  ╔═══╕ ☼' +
+                '☼  ╚═►   ☼' +
+                '☼☼☼☼☼☼☼☼☼☼';
+            //æ──>
+
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.RIGHT);
+        });
+        it("should avoid dead ends", () => {
+            const board =
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼       ○               ►  $☼" +
+                "☼#                       ╚══╗☼" +
+                "☼☼       ●                  ║☼" +
+                "☼☼                          ║☼" +
+                "☼☼                          ║☼" +
+                "☼☼     ☼☼☼☼☼                ╙☼" +
+                "☼☼     ☼                     ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+                "☼☼     ☼          ☼   ☼      ☼" +
+                "☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼                ☼         $☼" +
+                "☼☼    ●  ○                   ☼" +
+                "☼#   ©                ○      ☼" +
+                "☼☼                           ☼" +
+                "☼☼        ☼☼☼                ☼" +
+                "☼☼   ○   ☼  ☼                ☼" +
+                "☼☼      ☼☼☼☼#     ☼☼   ☼#○   ☼" +
+                "☼☼     ©☼   ☼   ● ☼ ☼ ☼ ☼ ○○ ☼" +
+                "☼#      ☼   ☼     ☼  ☼  ☼    ☼" +
+                "☼☼     ○          ☼     ☼    ☼" +
+                "☼☼     ●       $  ☼     ☼    ☼" +
+                "☼☼                           ☼" +
+                "☼☼                  ○        ☼" +
+                "☼☼ ○    ○      ●         ○   ☼" +
+                "☼#                           ☼" +
+                "☼☼               ○           ☼" +
+                "☼☼                           ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+            //debugger;
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).toEqual(COMMANDS.LEFT);
+        });
+
+
+        it("should leave home floor", () => {
             const board =
 
-`☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
+                `☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼
 ☼☼                   ●   ●   ☼
 ☼#                       ○   ☼
 ☼☼       ●                   ☼
@@ -79,17 +380,17 @@ describe("bot", () => {
 ☼☼           ●               ☼
 ☼☼     ☼☼☼☼☼                 ☼
 ☼☼     ☼                     ☼
-☼#     ☼☼☼  ╓     ☼☼☼*ø      ☼
-☼☼     ☼®   ▼     ☼   ☼  ●   ☼
+☼#     ☼☼☼        ☼☼☼☼ø      ☼
+☼☼     ☼®         ☼   ☼  ●   ☼
 ☼☼     ☼☼☼☼#      ☼☼☼☼#      ☼
 ☼☼                ☼          ☼
 ☼☼                ☼          ☼
 ☼☼                           ☼
-*ø                           ☼
+☼ø                           ☼
 ☼☼                           ☼
 ☼☼        ☼☼☼                ☼
 ☼☼       ☼  ☼        ○  ●    ☼
-☼☼      ☼☼☼*ø     ☼☼   ☼#    ☼
+☼☼      ☼☼☼☼ø     ☼☼   ☼#    ☼
 ☼☼      ☼   ☼     ☼®☼ ☼ ☼    ☼
 ☼#   ©  ☼   ☼     ☼  ☼  ☼    ☼
 ☼☼                ☼     ☼    ☼
@@ -97,12 +398,53 @@ describe("bot", () => {
 ☼☼○                     ○    ☼
 ☼☼                           ☼
 ☼☼             ●          ●  ☼
-☼#     <──┐   æ              ☼
+╘►     <──┐   æ              ☼
 ☼☼        │   │         ○    ☼
 ☼☼        └───┘          ©   ☼
 ☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼`;
+
             const move = getNextSnakeMove(board.replace(/\n/g, ''), mockLogger);
-            expect(move).not.toEqual(COMMANDS.LEFT);
+            expect(move).toEqual(COMMANDS.RIGHT);
         })
+
+        it("wired scenario", () => {
+            const board =
+
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼" +
+                "☼☼  ○                        ☼" +
+                "☼#                           ☼" +
+                "☼☼ ○                         ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼     ☼☼☼☼☼                 ☼" +
+                "☼☼     ☼                     ☼" +
+                "☼#     ☼☼☼        ☼☼☼☼#      ☼" +
+                "☼☼     ☼          ☼   ☼      ☼" +
+                "☼☼     ☼☼☼☼#  ○ ○ ☼☼☼☼#      ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼                ☼          ☼" +
+                "☼☼    ●                  ●   ☼" +
+                "☼#            ●              ☼" +
+                "☼☼     ○            ●    ●   ☼" +
+                "☼☼      ˄ ☼☼☼                ☼" +
+                "☼☼     ┌┘☼  ☼    <ö          ☼" +
+                "☼☼     ¤☼☼☼☼#     ☼☼   ☼#    ☼" +
+                "☼☼      ☼   ☼  ▲● ☼ ☼ ☼®☼    ☼" +
+                "☼#      ☼   ☼  ╚═╕☼  ☼  ☼    ☼" +
+                "☼☼                ☼     ☼    ☼" +
+                "☼☼                ☼     ☼    ☼" +
+                "☼☼              ○            ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼#                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼                           ☼" +
+                "☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼☼";
+
+            const move = getNextSnakeMove(board, mockLogger);
+            expect(move).not.toEqual(COMMANDS.RIGHT);
+        })
+
+
     });
 });

@@ -19,11 +19,13 @@
  * <http://www.gnu.org/licenses/gpl-3.0.html>.
  * #L%
  */
-import { getNextSnakeMove } from './bot';
-import { getBoardAsString } from './utils';
+var { getNextSnakeMove } = require('./bot');
+var { getBoardAsString } = require('./utils');
+var { COMMANDS } = require('./constants');
+
 var score;
 var roundTotal = 0;
-var ticks = 0;
+var ticks111 = 0;
 
 var URL = process.env.GAME_URL || '';
 var url = URL.replace("http", "ws").replace("board/player/", "ws?user=").replace("?code=", "&code=");
@@ -38,22 +40,42 @@ socket.addEventListener('close', function (event) {
     console.log('Closed');
 });
 
+var forceGC = function () { }
+if (typeof gc === 'function') {
+    forceGC = gc;
+    console.log('Clean gc usage');
+} else {
+    console.log('Clean gc usage is not available');
+}
 socket.addEventListener('message', function (event) {
     var pattern = new RegExp(/^board=(.*)$/);
-    ticks++;
+    ticks111++;
     var message = event.data;
     var parameters = message.match(pattern);
     var board = parameters[1];
     var answer = processBoard(board);
     socket.send(answer);
+    setTimeout(function () {
+        forceGC();
+    })
 });
 
+var logObject = {
+    sessions: {}
+};
+
+var currentLogState;
+var currentSessID;
 function processBoard(board) {
     var programLogs = "";
     function logger(message) {
         programLogs += message + "\n"
     }
-    var answer = getNextSnakeMove(board, logger);
+    var answer = getNextSnakeMove(board, logger, (sessid, newLogState) => {
+        currentLogState = newLogState;
+        currentSessID = sessid;
+    });
+
     var boardString = getBoardAsString(board);
 
     var logMessage = '';
@@ -70,22 +92,28 @@ function processBoard(board) {
         }
         if (board.indexOf('&') > -1) {
             roundTotal = 0;
-            ticks = 0;
+            ticks111 = 0;
         }
         var textarea = document.getElementById("score");
         if (textarea) {
-            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal/ticks).toFixed(2)}) ${score.info} \n`;
+            textarea.innerHTML = `Score: ${score.score} (${roundTotal}/${(roundTotal / ticks111).toFixed(2)}) ${score.info} \n`;
         }
     }
 
-    printBoard(boardString);
-    printLog(logMessage + '\n\n' + boardString);
-
-    if (socketScore && socketScore.OPEN) {
-        setTimeout(() => {
-            socketScore.send('{name: "getScreen", allPlayersScreen: false, players: ["tolik@sqrtt.pro"], gameName: "snakebattle"}');
-        }, 1);
+    if (currentLogState) {
+        if (!logObject.sessions[currentSessID]) {
+            logObject.sessions[currentSessID] = [];
+        }
+        logObject.sessions[currentSessID].push(currentLogState);
+        currentLogState.debug = {
+            msg: logMessage
+        }
+        currentLogState = null;
     }
+
+    printBoard(boardString);
+    printLog(logMessage + '\n\n');
+
 
     return answer;
 }
@@ -110,33 +138,54 @@ function printLog(text) {
     if (addToEnd.checked) {
         textarea.value = textarea.value + "\n" + text;
     } else {
-        textarea.value = text + "\n" + textarea.value;
+        var content = text + "\n"
+        textarea.value = content;
     }
 }
 
-
-var socketScore = new WebSocket('wss://game1.epam-bot-challenge.com.ua/codenjoy-contest/screen-ws?user=tolik@sqrtt.pro');
-
-socketScore.addEventListener('open', function (event) {
-    console.log('Score Open');
-});
-
-socketScore.addEventListener('close', function (event) {
-    console.log('Score Closed');
-});
-
-
-socketScore.addEventListener('message', function (event) {
-    const data = JSON.parse(event.data);
-    //console.log(data);
-    score = {
-        score: data['tolik@sqrtt.pro'].score,
-        info: data['tolik@sqrtt.pro'].info
+var saveLogBtn = document.querySelector('#saveLog');
+if (saveLogBtn) {
+    saveLogBtn.addEventListener('click', () => {
+        var FileSaver = require('file-saver');
+        var blob = new Blob([JSON.stringify(logObject)], { type: "text/plain;charset=utf-8" });
+        FileSaver.saveAs(blob, `snake-log-${(new Date().toISOString())}.json`);
+    });
+}
+function getBoardAsArray(board) {
+    var size = Math.sqrt(board.length);
+    /**
+     * @type {string[]}
+     */
+    var result = [];
+    for (var i = 0; i < size; i++) {
+        result.push(board.substring(i * size, (i + 1) * size));
     }
-    //socketScore.send(answer);
-});
+    return result.join('" + \n"');
+}
+window.getBoardAsArray = getBoardAsArray;
+
+// var socketScore = new WebSocket('wss://game1.epam-bot-challenge.com.ua/codenjoy-contest/screen-ws?user=tolik@sqrtt.pro');
+
+// socketScore.addEventListener('open', function (event) {
+//     console.log('Score Open');
+// });
+
+// socketScore.addEventListener('close', function (event) {
+//     console.log('Score Closed');
+// });
 
 
-setTimeout(() => {
-    window.location.reload();
-}, 5 * 60 * 1000)
+// socketScore.addEventListener('message', function (event) {
+//     const data = JSON.parse(event.data);
+//     //console.log(data);
+//     score = {
+//         score: data['tolik@sqrtt.pro'].score,
+//         info: data['tolik@sqrtt.pro'].info
+//     }
+//     //socketScore.send(answer);
+// });
+
+
+// setTimeout(() => {
+//     window.location.reload();
+// }, 5 * 60 * 1000)
